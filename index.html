@@ -442,7 +442,7 @@ function vCoffee(){
   if (S.coffee) return '<section class="card"><h2>Kaffee</h2><p>'+S.coffee.txt+'</p>'+S.coffee.chips
     +'<button class="btn" data-a="go" data-v="breakfast">Frühstück machen</button></section>';
   var band = '';
-  if (!S.spoonsInit){ S.spoonsInit = true; var cc = coffeeCenter(), opts = []; for (var q=1;q<=5;q+=.5){ if (Math.abs(q-cc)>=1) opts.push(q); } S.spoons = opts[Math.floor(Math.random()*opts.length)]; }
+  if (!S.spoonsInit){ S.spoonsInit = true; var cc = coffeeCenter(), opts = []; for (var q=1;q<=5;q+=.5){ if (Math.abs(q-cc)>=1) opts.push(q); } S.spoons = opts[Math.floor(Math.random()*opts.length)]; if (chance(.3)) S.spoons = clamp(Math.round(cc*2)/2,1,5); }
   if (lv('kaffee')>=1 && !(typeof hard==='function' && hard())){
     var c = coffeeCenter(), t = coffeeTol();
     band = '<div class="sweet" aria-hidden="true"><i style="left:'+(Math.max(0,c-t)/6*100)+'%;width:'+(Math.min(6,c+t)-Math.max(0,c-t))/6*100+'%"></i></div><p class="small">Grün: dein Sweet Spot für heute.</p>';
@@ -3803,8 +3803,8 @@ PALS.push(
 function palOf(id){
   if (typeof id==='string' && id.indexOf('c:')===0){
     var q = id.split(':'), c1 = q[1]||'#1243B8', c2 = q[2]||'#FFFFFF';
-    var la = colLum(c1)>.55 ? colMix(c1,'#000000',.4) : c1, da = colLum(c1)<.1 ? colMix(c1,'#FFFFFF',.35) : c1;
-    return {id:id, n:'Eigene Farben', cn:'Eigene Farben', sec:c2,
+    var la = colLum(c1)>.55 ? colMix(c1,'#000000',colLum(c1)>.8?.6:.4) : c1, da = colLum(c1)<.1 ? colMix(c1,'#FFFFFF',.35) : c1;
+    return {id:id, n:'Eigene Farben', cn:'Eigene Farben', sec:c2, jc:c1, ji:colFg(c1,c2),
       l:{a:la, s:colMix(c1,'#FFFFFF',.88), f:colFg(la,c2)}, d:{a:da, l:colMix(c1,'#FFFFFF',.5), s:colMix(c1,'#000000',.72), f:colFg(da,c2)}};
   }
   for (var i=0;i<PALS.length;i++) if (PALS[i].id===id) return PALS[i];
@@ -3816,7 +3816,7 @@ function applyTheme(){
     var st = document.getElementById('theme');
     if (!st){ if (!document.createElement) return; st = document.createElement('style'); st.id = 'theme'; document.head.appendChild(st); }
     var dk = '--accent:'+p.d.a+';--link:'+p.d.l+';--soft:'+p.d.s+';--accent-fg:'+p.d.f;
-    st.textContent = ':root{--accent:'+p.l.a+';--link:'+p.l.a+';--soft:'+p.l.s+(p.l.f?';--accent-fg:'+p.l.f:'')+'}'
+    st.textContent = ':root{--accent:'+p.l.a+';--link:'+p.l.a+';--soft:'+p.l.s+(p.l.f?';--accent-fg:'+p.l.f:'')+(p.jc?';--jersey:'+p.jc+';--jersey-ink:'+p.ji:'')+'}'
       +'@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){'+dk+'}}:root[data-theme="dark"]{'+dk+'}';
   } catch(e){}
 }
@@ -3830,7 +3830,7 @@ function colorField(lg, kreis){
   var row = function(act, cur, skipWhite){ return COLS.filter(function(c){ return !(skipWhite && c.n==='Weiß'); }).map(function(c){
     return '<button class="pill" data-a="'+act+'" data-v="'+c.h+'" aria-pressed="'+(on && cur.toLowerCase()===c.h.toLowerCase())+'"><i class="dot" style="background:'+c.h+'"></i>'+c.n+'</button>'; }).join(''); };
   return (kreis ? '<div class="field"><span class="lbl">Vereinsfarben</span><div class="pills"><button class="pill" data-a="lgdef" aria-pressed="'+!lg.palSet+'">Standard des Vereins</button></div></div>' : '')
-    +'<div class="field"><span class="lbl">Primärfarbe (Heimtrikot)</span><div class="pills">'+row('lgc1',c1,true)+'</div></div>'
+    +'<div class="field"><span class="lbl">Primärfarbe (Heimtrikot)</span><div class="pills">'+row('lgc1',c1,false)+'</div></div>'
     +'<div class="field"><span class="lbl">Sekundärfarbe (Auswärtstrikot)</span><div class="pills">'+row('lgc2',c2,false)+'</div></div>';
 }
 A.lgc1 = function(el){ lgRead(); S.lg.c1 = el.dataset.v; S.lg.palSet = true; if (!S.lg.c2) S.lg.c2 = '#FFFFFF'; render(); };
@@ -3892,19 +3892,37 @@ buildEvents = function(){
 
 /* ---------- Mein Spieler ---------- */
 TIMES.player = '';
-function vPlayer(){
-  var p = posOf(S.pos), first = !P.plset, ch = P.plset && P.season && P.last && S.pos!==P.last.pos;
-  return '<section class="card"><h2>'+(first?'Dein Spieler':'Mein Spieler')+'</h2><p class="lead">'
-    +(first ? 'Wie heißt du und auf welcher Position spielst du? Das kannst du später jederzeit unter „Mein Spieler" ändern.' : 'Name, Nummer, Position und Schwierigkeit.')+'</p>'
-    +'<div class="setup">'+jersey()
+function playerForm(){
+  var p = posOf(S.pos);
+  return '<div class="setup">'+jersey()
     +'<div class="fields"><div class="field"><label for="inName">Name auf dem Trikot</label><input id="inName" type="text" maxlength="12" value="'+esc(S.name)+'" placeholder="optional" autocomplete="off"></div>'
     +'<div class="field"><label for="inNum">Trikotnummer</label><input id="inNum" type="number" min="1" max="99" inputmode="numeric" value="'+esc(S.num)+'"></div></div></div>'
     +'<div class="field"><span class="lbl">Position</span><div class="pills">'
     + POS.map(function(q){ return '<button class="pill" data-a="pos" data-v="'+q.id+'" aria-pressed="'+(q.id===S.pos)+'">'+q.name+'</button>'; }).join('')
-    +'</div><p class="tip">'+tipOf(p)+'</p>'+''+'</div>'
-    +'<div class="field"><span class="lbl">Schwierigkeit</span><div class="pills">'+diffPills()+'<p class="tip">'+diffTip()+'</p></div>'
-    +'<button class="btn" data-a="plok">'+(first?'Los geht’s':'Fertig')+'</button></section>';
+    +'</div><p class="tip">'+tipOf(p)+'</p></div>'
+    +'<div class="field"><span class="lbl">Schwierigkeit</span><div class="pills">'+diffPills()+'<p class="tip">'+diffTip()+'</p></div>';
 }
+function vPlayer(){
+  var first = !P.plset;
+  return '<section class="card"><h2>'+(first?'Dein Spieler':'Mein Spieler')+'</h2><p class="lead">'
+    +(first ? 'Wie heißt du und auf welcher Position spielst du? Das kannst du später jederzeit unter „Mein Spieler" ändern.' : 'Name, Nummer, Position und Schwierigkeit.')+'</p>'
+    +playerForm()
+    +'<button class="btn" data-a="plok">'+(first?'Los geht\u2019s':'Fertig')+'</button></section>';
+}
+function vNewCareer(){
+  return '<section class="card"><h2>Deine Karriere</h2><p class="lead">Lege deinen Spieler fest und starte eine Saison mit Spielplan, Tabelle, Training und Auswärtsspielen. Skills und Erfolge bleiben erhalten.</p>'
+    +playerForm()
+    +'<button class="btn" data-a="lg">Saison starten</button>'
+    +'<div class="tiles"><button class="btn ghost" data-a="skills">Skill-Baum'+(P.sp?'<small>'+P.sp+' SP offen</small>':'')+'</button>'
+    +'<button class="btn ghost" data-a="ach">Erfolge<small>'+Object.keys(P.ach).length+'/'+ACH.length+'</small></button>'
+    +'<button class="btn ghost" data-a="career">Karriere-Statistik</button><button class="btn ghost" data-a="menu">Menü</button></div></section>';
+}
+var _lg9 = A.lg;
+A.lg = function(){
+  S.num = clamp(parseInt(S.num,10)||9,1,99);
+  P.last = {pos:S.pos, num:S.num, name:S.name}; P.plset = true; saveP();
+  return _lg9();
+};
 V.player = vPlayer;
 A.player = function(){ S.plBack = S.stage; go('player'); };
 A.plok = function(){
@@ -3924,6 +3942,7 @@ V.menu = function(){ return '<section class="card"><button class="btn" data-a="p
 /* Setup in der Saison: keine Namens-/Positionsfelder mehr, dafür „Mein Spieler" */
 var _vs9 = V.setup;
 V.setup = function(){
+  if (!P.season) return vNewCareer();
   var h = _vs9();
   if (P.season){
     h = h.replace('<div class="fields">','<div class="fields" hidden>');
@@ -3970,7 +3989,9 @@ A.dayp = function(el){
   _dayp9(el);
   if (el.dataset.v==='women' && S.day && S.day.res){
     S.day.res.t += ' Deine bessere Hälfte hat dir die Tasche gepackt.';
-    S.bag = buildBag().filter(function(x){ return x.core || x.must; }).map(function(x){ return x.id; });
+    var fb = {}; BAG_OK.forEach(function(x){ fb[x.id] = 1; });
+    buildBag().forEach(function(x){ if (x.core || x.must) fb[x.id] = 1; });
+    S.bag = Object.keys(fb);
     S.travel = {txt:'Du bist durch die Frauenmannschaft ohnehin schon in der Halle und musst nicht mehr anreisen.', chips:''};
     S.noWarmSkip = false;
   }
@@ -4135,8 +4156,8 @@ function wegLine(w){
 /* ---------- Trikot: Name oder Vereinsname ---------- */
 function jersey(){
   var p = posOf(S.pos), g = !!p.gk;
-  var fill = g ? 'var(--surface)' : 'var(--accent)';
-  var ink = g ? 'var(--accent)' : 'var(--accent-fg)';
+  var fill = g ? 'var(--surface)' : 'var(--jersey, var(--accent))';
+  var ink = g ? 'var(--accent)' : 'var(--jersey-ink, var(--accent-fg))';
   var raw = String(S.name || CLUB().n).toUpperCase(), lines = [raw];
   if (raw.length>9 && raw.indexOf(' ')>0){
     var best = 0, mid = raw.length/2; for (var k=0;k<raw.length;k++) if (raw.charAt(k)===' ' && Math.abs(k-mid)<Math.abs(best-mid)) best = k;
@@ -4164,6 +4185,9 @@ A.theme = function(){
   S.themeNote = nx==='dark' ? 'Dunkel' : nx==='light' ? 'Hell' : 'Automatisch (wie dein Gerät)';
   render();
 };
+
+/* ---------- Start: geladenen Stand mit den neuen Standardwerten abgleichen ---------- */
+(function(){ try { if (!readSlot(SLOT)) P = defaultP(); else P = normP(P); } catch(e){} })();
 
 
 S = newRun();
