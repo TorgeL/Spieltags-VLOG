@@ -540,7 +540,7 @@ function vWarm(){
 
 function formValue(){ var m = S.m; return .36*m.energy+.26*m.focus+.2*m.morale+.18*m.stomach; }
 function formLabel(){ var f = formValue(); return f>=75?'Topform':f>=62?'solide':f>=48?'angeschlagen':'am Limit'; }
-function logLi(e){ return '<li class="'+e.k+'"><span class="mn">'+(e.m?e.m+"'":'')+'</span><span>'+esc(e.t)+'</span></li>'; }
+function logLi(e){ return '<li class="'+e.k+'"><span class="mn">'+(e.m?e.m+"'":'')+'</span><span>'+esc(fixDots(e.t))+'</span></li>'; }
 function vMatch(){
   var M = S.match, R = S.result, me = posOf(S.pos);
   var board = function(h,a){ return '<div class="board"><div class="tm">HSG 24109<br>109er</div><div class="sc"><span id="sh">'+h+'</span>:<span id="sa">'+a+'</span></div><div class="tm">'+esc(S.opp)+'</div></div>'; };
@@ -965,7 +965,7 @@ function eatMeal(items){
     d.energy -= (-fit-1)*(S.pos==='KR'?7:4.5);
     notes.push({c:'bad',t:S.pos==='KR'?'Für einen Kreisläufer war das zu wenig. Die Kraft fehlt.':'Etwas wenig im Bauch. Das gibt später Löcher.'});
   } else if (fit>1.2){
-    d.energy -= (fit-1.2)*(p.wing?8:4);
+    d.energy -= (fit-1.2)*(p.wing?8:4); d.stomach = (d.stomach||0)-Math.min(35,10+(fit-1.2)*10);
     notes.push({c:'bad',t:p.wing?'Zu schwer für einen Außen. Du fühlst dich langsam.':'Ein ordentlicher Schlag im Magen. Das drückt.'});
   } else notes.push({c:'good',t:'Genau die richtige Portion für deine Position.'});
   var risk = r+(fit>1.5?(fit-1.5)*12:0); if (lv('ernaehrung')>=2) risk *= .5;
@@ -1745,7 +1745,7 @@ function simStep(sm){
   sm.wasSusp = sm.susp>0;
   sm.playing = sm.canPlay && sm.onCourt && !sm.out && !sm.wasSusp;
   if (sm.susp>0) sm.susp--;
-  sm.skipH = false; sm.skipO = false; sm.noFin = false;
+  sm.skipH = false; sm.skipO = false; sm.noFin = false; sm.noPen = false;
   var sp = sSpecial(sm);
   if (sp){
     if (sm.inter){ sm.pend = sp; return sp; }
@@ -1781,7 +1781,7 @@ function sSpecial(sm){
 
 /* Wird mit der Wahl des Spielers (oder null = Automatik) aufgerufen */
 function applySpecial(sm, p, c){
-  sm.skipH = true;
+  sm.skipH = true; sm.noPen = true;
   if (p.type==='sev') return p.role==='shoot' ? sevShoot(sm, c||autoShot(sm)) : sevSave(sm, c||autoDive());
   if (p.type==='def') return defResolve(sm, p, c||autoDef(p));
   if (p.type==='crunch') return crunchShoot(sm, c);
@@ -2068,10 +2068,10 @@ function sFinish(sm){
       } else if (chance(p)) sm.as++;
     }
   }
-  if (playing && !gk && chance((pos.pen+(oo.rival?.004:0)+F.pen+(pos.id==='KR'?.004*ef('haerte'):0))*(sm.stam<35?1.8:1))){
+  if (playing && !gk && !sm.noPen && chance((pos.pen+(oo.rival?.004:0)+F.pen+(pos.id==='KR'?.004*ef('haerte'):0))*(sm.stam<35?1.8:1))){
     R.pen++; sm.susp = 2;
     if (R.pen>=3){ sm.out = true; R.red = true; sLog(sm,'Dritte Zeitstrafe: Rote Karte. Dein Spiel ist vorbei.'); }
-    else sLog(sm,'Zwei Minuten! Du musst raus.');
+    else sLog(sm, pick(PEN_TXT));
   }
   if (playing && !sm.out && chance(F.injury/60*(sm.stam<30?1.6:1))){ sm.out = true; R.inj = true; sLog(sm,'Verletzung. Du humpelst vom Feld.'); }
   if (playing){
@@ -2506,7 +2506,8 @@ function finishRun(){
   if (S.bag.indexOf('pan')>=0 && R.res==='win') give('pfanne');
   if (S.leib && R.goals>0) give('l99');
   if (c.youth>=10) give('jug'); if (R.dpar) give('dpar'); if (S.hairSponsor) give('hair');
-  var gain = (R.res==='win'?1:0)+(R.rating>=7.5?1:0)+((R.goals>=8||R.saves>=20)?1:0)+(R.mvp?1:0)+(got.length>=2?1:0); if (gain<1 && chance(.5)) gain = 1;
+  var gain = (R.res==='win'?1:0)+(R.rating>=7.2?1:0)+((R.goals>=6||R.saves>=14)?1:0)+(R.mvp?1:0)+(got.length>=2?1:0);
+  if (S.canPlay){ if (gain<1){ P.noSp = (P.noSp||0)+1; if (P.noSp>=2){ gain = 1; P.noSp = 0; } } else P.noSp = 0; } else gain = 0;
   var cm;
   if (!S.canPlay) cm = 'Der Vlog heißt jetzt "Vergessen ist menschlich". Die Kommentare sind gnadenlos.';
   else if (R.mvp) cm = 'MVP! Der Fanblock singt deinen Namen und der Vlog läuft heiß.';
@@ -2754,7 +2755,7 @@ function vMatch(){
   return '<section class="card"><h2>'+(done?'Abpfiff':'Spiel läuft')+'</h2>'+toB+board(cur.h,cur.a)
     +'<div class="clock" id="mclock">'+(done?'Endstand':upto+'. Minute')+'</div>'
     +(done?'':'<div class="spd" role="group" aria-label="Tempo">'+[['slow','Langsam'],['mid','Mittel'],['fast','Schnell']].map(function(x){ return '<button class="pill" data-a="spd" data-v="'+x[0]+'" aria-pressed="'+((P.spd||'mid')===x[0])+'">'+x[1]+'</button>'; }).join('')+'</div>')
-    +(M.outcome&&M.outcome.length&&!pend?'<div class="outcome '+(M.outcome.some(function(e){ return e.k==='me'; })?'good':'miss')+'" id="mout"><b>Ergebnis</b>'+M.outcome.map(function(e){ return '<p>'+esc(e.t)+'</p>'; }).join('')+'</div>':'')
+    +(M.outcome&&M.outcome.length&&!pend?'<div class="outcome '+(M.outcome.some(function(e){ return e.k==='me'; })?'good':'miss')+'" id="mout"><b>Ergebnis</b>'+M.outcome.map(function(e){ return '<p>'+esc(fixDots(e.t))+'</p>'; }).join('')+'</div>':'')
     +(done?'<button class="btn" data-a="tostats">Abschlussstatistik ansehen</button>':'')+pend
     +(pend?'':'<ol class="log" id="mlog" aria-live="polite">'+lines+'</ol>')
     +(done?'':pend?'':('<button class="btn ghost" data-a="skip">'+(M.mode==='crunch'?'Rest simulieren':'Überspringen')+'</button>'))
@@ -4188,6 +4189,19 @@ A.theme = function(){
 
 /* ---------- Start: geladenen Stand mit den neuen Standardwerten abgleichen ---------- */
 (function(){ try { if (!readSlot(SLOT)) P = defaultP(); else P = normP(P); } catch(e){} })();
+
+/* ---------- Kleinigkeiten ---------- */
+function fixDots(t){ return String(t==null?'':t).replace(/([!?])\.(?!\.)/g,'$1').replace(/(^|[^.])\.\.(?!\.)/g,'$1.'); }
+var PEN_TXT = [
+  'Du bleibst auf sechs Metern kleben, dein Gegenspieler kommt mit ordentlich Schwung. Du hängst im Arm, Zeitstrafe!',
+  'Du greifst zu spät zu und erwischst den Wurfarm. Zwei Minuten!',
+  'Du hältst den Kreisläufer am Trikot fest. Der Schiedsrichter zeigt sofort an: Zeitstrafe!',
+  'Du steigst im Zweikampf zu hart ein, der Gegner geht zu Boden. Zwei Minuten!',
+  'Du meckerst nach dem Pfiff zu lange. Der Schiedsrichter hat genug: Zeitstrafe!',
+  'Du klammerst im Rückzug am Gegenspieler. Das war ein klares Foul, zwei Minuten!'
+];
+var _nr9z = newRun;
+newRun = function(){ var r = _nr9z(); if (P.diff==='easy' && r.season) r.homeBase += 1.5; return r; };
 
 
 S = newRun();
