@@ -1975,7 +1975,7 @@ function crunchShoot(sm, c){
       else sLog(sm,'Crunch Time: '+lbl+', Tor! Die Halle steht.');
     } else if (id==='heber'){ sLog(sm,'Crunch Time: Peinlich! Der Torwart fängt den Heber ganz locker. Der Trainer wechselt dich aus.','info'); bench(sm,5); }
     else if (id==='dreher') sLog(sm,'Crunch Time: Zu verspielt, der Torwart kennt deine Tricks.','info');
-    else if (id==='duelw' && chance(.3)){ if (chance(.76)){ sm.hs++; sLog(sm,'Crunch Time: Du holst den 7-Meter raus, er wird verwandelt.'); } else sLog(sm,'Crunch Time: 7-Meter herausgeholt, aber vergeben.','info'); }
+    else if (false){ if (chance(.76)){ sm.hs++; sLog(sm,'Crunch Time: Du holst den 7-Meter raus, er wird verwandelt.'); } else sLog(sm,'Crunch Time: 7-Meter herausgeholt, aber vergeben.','info'); }
     else if (id==='roll'){ S.m.morale = clamp(S.m.morale-4,0,100); sm.homeBase -= .5; sLog(sm,'Crunch Time: Die Rolle geht daneben. Die Mannschaft ist enttäuscht.','info'); }
     else if (id==='far') sLog(sm,'Crunch Time: Der Torwart fischt deinen Wurf aus dem Winkel.','info');
     else sLog(sm,'Crunch Time: '+lbl+' wird abgewehrt.','info');
@@ -1998,7 +1998,7 @@ function crunchKeep(sm, c, p0){
 }
 
 function playOptions(sm){
-  var late = sm.min>=54, el = PLAYS_ALL.filter(function(x){ return (!x.kempa || ef('pass')>=3) && (!x.late || late); });
+  var late = sm.min>=54, el = PLAYS_ALL.filter(function(x){ return (!x.kempa || ef('pass')>=2) && (!x.late || late); });
   var good = el.filter(function(x){ return x.good.indexOf(sm.defSys)>=0 && !x.kempa && !x.late; });
   var bad = el.filter(function(x){ return x.good.indexOf(sm.defSys)<0 && !x.kempa && !x.late; });
   var out = [pick(good)];
@@ -2012,7 +2012,7 @@ function timeoutPlay(sm, id){
   var pl = playOf(id), good = pl.good.indexOf(sm.defSys)>=0, sk = ef('spielzuege'), ok, m = S.m;
   sm.to[sm.min<30?0:1] = true;
   if (pl.kempa){
-    ok = chance(.5+.06*ef('pass')+.04*sk);
+    ok = chance(clamp(.28+.11*ef('pass')+.07*ef('technik')+.04*sk,.2,.93));
     if (ok){ sm.boost = {v:9, until:sm.min+10}; sm.cbonus = .12; S.vb += 500; m.morale = clamp(m.morale+6,0,100); sm.pendTxt = 'Kempa! Der Ball fliegt, der Kreisläufer fängt in der Luft und versenkt. Die Halle steht Kopf.'; }
     else { sm.boost = {v:-2, until:sm.min+5}; m.morale = clamp(m.morale-4,0,100); sm.pendTxt = 'Der Kempa-Trick geht schief. Der Ball landet im Aus, die Abwehr lacht nicht, sondern kontert.'; }
     sm.forceCrunch = true; return ok;
@@ -2299,7 +2299,7 @@ lockerCheck = function(){
   var L = _lcBase(), has = function(id){ return S.bag.indexOf(id)>=0; };
   if (P.lastMvp){
     if (has('trophy')){ L.lines.push({c:'good',t:'Der MVP-Pokal glänzt im Spind. Die Kabine ist stolz.'}); L.chips += bump({morale:3}); }
-    else { P.kasse += 10; S.coachD -= 1; L.lines.push({c:'bad',t:'MVP-Pokal vergessen. Zehn Euro in die Mannschaftskasse, dazu ein Spruch '+(S.cap?'vom Trainer':'vom Kapitän')+'.'}); L.chips += bump({morale:-3}); }
+    else { P.kasse += 10; S.coachD -= 1; L.lines.push({c:'bad',t:'MVP-Pokal vergessen. Die Mannschaftskasse freut sich, dazu ein Spruch '+(S.cap?'vom Trainer':'vom Kapitän')+'.'}); L.chips += bump({morale:-3}); }
     P.lastMvp = false;
   }
   if (P.shirt){
@@ -3036,7 +3036,7 @@ function kreisTeams(meName, customNick, pal){
   var t = null; TEAMS.forEach(function(x){ if (x.n===meName) t = x; });
   if (!t) return storyTeams();
   var mt = teamOf(t);
-  var club = {n:t.n, nick:t.n.split(' ').pop(), pal:mt.pal, resin:mt.resin};
+  var club = {n:t.n, nick:(t.n==='HSG 24109'?'109er':t.n.split(' ').pop()), pal:mt.pal, resin:mt.resin};
   if (customNick) club.nick = customNick;
   if (pal) club.pal = mt.pal = pal;
   var opps = TEAMS.filter(function(x){ return x.n!==meName; }).map(teamOf);
@@ -3044,7 +3044,7 @@ function kreisTeams(meName, customNick, pal){
   return {club:club, teams:[meTeam(club)].concat(opps)};
 }
 function ownTeams(o){
-  var club = {n:o.name, nick:o.nick||o.name.split(' ').pop(), pal:o.pal, resin:o.resin}, names = [], used = {};
+  var club = {n:o.name, nick:o.nick||(o.name==='HSG 24109'?'109er':o.name.split(' ').pop()), pal:o.pal, resin:o.resin}, names = [], used = {};
   o.names.forEach(function(n){ if (n && !used[n.toLowerCase()] && n.toLowerCase()!==o.name.toLowerCase() && names.length<o.n-1){ used[n.toLowerCase()] = 1; names.push(n); } });
   var places = shuffle(GEN_PLACE.slice());
   while (names.length<o.n-1){
@@ -3483,7 +3483,7 @@ lockerCheck = function(){
     var a = amtOf(id); if (!a) return;
     if (a.use==='resin' && S.harz) return;
     if (S.bag.indexOf(a.item ? 'amt_'+id : a.use)>=0){ L.lines.push({c:'good',t:a.good}); L.chips += bump(a.fg()); }
-    else { P.kasse += 5; S.coachD -= .5; L.lines.push({c:'bad',t:a.bad+' Fünf Euro in die Mannschaftskasse.'}); L.chips += bump(a.fb()); }
+    else { P.kasse += 5; S.coachD -= .5; L.lines.push({c:'bad',t:a.bad+' Die Mannschaftskasse freut sich.'}); L.chips += bump(a.fb()); }
   });
   return L;
 };
@@ -4692,9 +4692,9 @@ var PREP = [
     ['wurf','Individuelles Wurftraining','Du arbeitest an deinem Wurf.',function(){ addBuff(3,0,1); return {t:'Du wirfst dich warm und feilst am Wurf. Die Bewegungen sitzen immer besser.', c:chipsOf({focus:6,energy:-4})}; }],
     ['cross','CrossFit','Burpees, Kettlebells und viel Schweiß.',function(){ addBuff(3,1,1); return {t:'CrossFit mit der Mannschaft: Burpees bis zum Umfallen. Danach seid ihr zusammengeschweißt.', c:chipsOf({energy:-10,morale:5})}; }]]},
   {t:'Phase III: Spiele, Spiele, Spiele', s:'Die ersten Testspiele stehen an.', o:[
-    ['turnier','Turnier mit gemischten Teams','Ihr spielt in bunt gemischten Mannschaften.',function(){ return {t:'Auf dem Turnier mit gemischten Teams lernst du neue Mitspieler kennen. Das Zusammenspiel klappt überraschend gut.', c:chipsOf({morale:7,focus:3,energy:-4})}; }],
-    ['drueber','Test gegen eine Liga drüber','Ein hartes Spiel gegen starke Gegner.',function(){ var w = chance(.25); addBuff(3,0,1); return {t:w ? 'Gegen die Liga drüber gewinnt ihr tatsächlich knapp. Das gibt Selbstvertrauen.' : 'Gegen die Liga drüber verliert ihr deutlich, lernt aber viel dazu.', c:chipsOf({morale:w?10:-2,focus:5,energy:-6})}; }],
-    ['drunter','Test gegen deine Liga drunter','Ein lockerer Sieg zum Selbstvertrauen.',function(){ return {t:'Gegen die Liga drunter gewinnt ihr klar. Ihr probiert Spielzüge aus und habt Spaß.', c:chipsOf({morale:8,focus:2,energy:-2})}; }]]},
+    ['turnier','Turnier mit gemischten Mannschaften','Ihr spielt gegen starke und schwächere Gegner, von allem etwas.',function(){ return {t:'Auf dem Turnier trefft ihr auf starke und schwächere Gegner, von allem ein bisschen. Das gibt Spielpraxis, und das Zusammenspiel klappt überraschend gut.', c:chipsOf({morale:7,focus:3,energy:-4})}; }],
+    ['drueber','Test gegen eine starke Mannschaft','Ihr sucht euch zum Testen einen Gegner aus einer höheren Liga.',function(){ var w = chance(.25); addBuff(3,0,1); return {t:w ? 'Gegen die starke Mannschaft aus der höheren Liga gewinnt ihr tatsächlich knapp. Das gibt Selbstvertrauen.' : 'Gegen die starke Mannschaft aus der höheren Liga verliert ihr deutlich, lernt aber viel dazu.', c:chipsOf({morale:w?10:-2,focus:5,energy:-6})}; }],
+    ['drunter','Test gegen eine Mannschaft aus einer niedrigen Liga','Ein hoffentlich lockerer Sieg, um wieder reinzukommen.',function(){ return {t:'Gegen die Mannschaft aus der niedrigen Liga gewinnt ihr klar. Ihr probiert Spielzüge aus und habt Spaß.', c:chipsOf({morale:8,focus:2,energy:-2})}; }]]},
   {t:'Phase IV: Teambuilding', s:'Zum Abschluss der Vorbereitung geht es um den Zusammenhalt.', o:[
     ['tri','Gemeinsamer Triathlon','Schwimmen, Radeln, Laufen, zusammen im Team.',function(){ addBuff(3,2,0); return {t:'Der gemeinsame Triathlon schweißt zusammen. Beim Zieleinlauf warten alle aufeinander.', c:chipsOf({energy:-10,morale:8})}; }],
     ['polo','Wasser-Polo','Im Schwimmbad wird gespritzt und gelacht.',function(){ return {t:'Beim Wasser-Polo ist niemand ein Profi. Es wird viel gespritzt und noch mehr gelacht.', c:chipsOf({morale:10,energy:-3})}; }],
@@ -4992,6 +4992,117 @@ awayFix = function(h){
     o = o.replace(/(<div class="res[^"]*">)Sieg(<\/div>)/,'$1Auswärtssieg$2').replace(/(<div class="res[^"]*">)Niederlage(<\/div>)/,'$1Niederlage auswärts$2').replace(/(<div class="res[^"]*">)Unentschieden(<\/div>)/,'$1Unentschieden auswärts$2');
   }
   return o;
+};
+
+/* ===== Feedback 5.11. Teil 2: Kasse aus, Kempa, Foulelfmeter ===== */
+(function(){
+  var HIDE = {feier:1, lauf:1, beitrag:1, geld:1, sponsor:1};
+  var _be = buildEvents;
+  buildEvents = function(){ return _be().filter(function(e){ return !(e && HIDE[e.id]); }); };
+  var _kn = kn;
+  kn = function(t){ if (/Mannschaftskasse/.test(String(t))) return; return _kn(t); };
+  for (var i = ACH.length-1; i>=0; i--) if (ACH[i].id==='hygge' || ACH[i].id==='secret') ACH.splice(i,1);
+  var _vs = V.stats;
+  V.stats = function(){
+    return _vs().replace(/<button class="btn ghost" data-a="sptag"[^>]*>.*?<\/button>/g,'').replace(/<p class="note">Sponsor im Vlog markiert[^<]*<\/p>/g,'');
+  };
+  var _vse = V.seasonend;
+  V.seasonend = function(){ if (P.season) P.season.tripDone = true; return _vse(); };
+  var _vw = V.week;
+  V.week = function(){
+    return _vw().replace(/Mannschaftskasse: -?\d+ Euro( · )?/g,'').replace(/ · <\/p>/g,'</p>');
+  };
+})();
+
+/* Zweikampf am Kreis */
+var _co16 = crunchOptions;
+crunchOptions = function(sm){
+  var o = _co16(sm), pos = sm.pos.id;
+  if (sm.rbOpt && WINGP.indexOf(pos)>=0) pos = 'RM';
+  if (BACKP.indexOf(pos)<0 && WINGP.indexOf(pos)<0){
+    var i = -1; o.forEach(function(x,k){ if (x.id==='screen') i = k; });
+    var e = {id:'duelk', n:'Zweikampf am Kreis', s:'Gegen den Block: Tor oder 7-Meter.'};
+    if (i<0) o.push(e); else o.splice(i,0,e);
+  }
+  return o;
+};
+
+/* Foul nach Durchbruch/Zweikampf: 7m, geworfen vom Teamkollegen oder von dir */
+function teamSev(sm, intro, lift){
+  var R = sm.R, m = S.m;
+  if (chance(.76)){ sm.hs++; R.lastKey = sm.min; if (lift) m.morale = clamp(m.morale+5,0,100); sLog(sm, intro+' Dein Teamkollege tritt zum 7m an und verwandelt sicher.'); }
+  else sLog(sm, intro+' Dein Teamkollege tritt zum 7m an und scheitert am Torwart.', 'info');
+}
+function foulSev(sm){
+  var R = sm.R, can = (R.sevG + (P.career.sevMade||0)) >= 2;
+  if (can && sm.inter){
+    sm.pend2 = {type:'sevwho', hint:chance(.7)?sm.kfav:(sm.kfav==='L'?'R':'L')};
+  } else teamSev(sm, 'Du wurdest gefoult.', false);
+}
+var _cs16 = crunchShoot;
+crunchShoot = function(sm, c){
+  var id = c ? c.id : null;
+  if (id==='duelk'){
+    var R = sm.R, base = .43+(sm.form-60)/240-Math.max(0,24-sm.stam)*.004+.02*ef('nerven')-(sm.oo.exp?.04:0)+sm.cbonus-Math.max(0,R.goals-4)*.05;
+    var p = clamp(base-.03+.05*ef('haerte'),.12,.86);
+    sm.cbonus = 0; sm.skipH = true; R.crN++; R.shots++;
+    if (chance(p)){ R.goals++; R.crG++; sm.hs++; R.lastKey = sm.min; sLog(sm,'Crunch Time: Du setzt dich am Kreis gegen zwei Gegner durch, Tor!'); }
+    else if (chance(.35)){ R.shots--; sLog(sm,'Crunch Time: Der Abwehrspieler hält dich am Trikot. Foul, 7-Meter!'); foulSev(sm); }
+    else sLog(sm,'Crunch Time: Zweikampf am Kreis, der Block steht und der Wurf wird abgewehrt.','info');
+    sm.rbOpt = false; return;
+  }
+  var g0 = sm.hs, a0 = sm.as, n0 = sm.cur.length;
+  var r = _cs16(sm, c);
+  if ((id==='break' || id==='duelw') && sm.hs===g0 && sm.as===a0 && sm.cur.length===n0+1 && chance(.3)){
+    sm.cur.pop(); sm.R.shots--;
+    sLog(sm, id==='break' ? 'Crunch Time: Du wirst im Durchbruch gefoult. 7-Meter!' : 'Crunch Time: Der Abwehrspieler kommt zu spät, Foul auf Außen. 7-Meter!', 'me');
+    foulSev(sm);
+  }
+  return r;
+};
+
+/* Auswahl: selbst werfen oder Teamkollege */
+var _vp16 = vPend;
+vPend = function(p, sm){
+  if (p.type==='sevwho'){
+    return '<div class="mini"><h3>Du wurdest gefoult!</h3><p>Siebenmeter. Wer wirft?</p><div class="opts">'
+      +'<button class="opt" data-a="sevwho" data-v="self"><b>Trotzdem selber werfen</b><span>Du hast schon zwei Siebenmeter verwandelt. Bei einem Fehlwurf sinkt die Moral.</span></button>'
+      +'<button class="opt" data-a="sevwho" data-v="team"><b>Einen Teamkollegen werfen lassen</b><span>Ein Tor gibt der Mannschaft Auftrieb.</span></button></div></div>';
+  }
+  var h = _vp16(p, sm);
+  if (p.type==='sev' && p.role==='shoot' && p.foul) h = h.replace('Der Trainer zeigt auf dich. Wohin wirfst du?','Du wurdest gefoult und wirfst selbst. Wohin geht der Ball?');
+  return h;
+};
+var _sv16 = sevShoot;
+sevShoot = function(sm, c){
+  var n = sm.R.sevSeq.length, f = sm.selfFoul; sm.selfFoul = false;
+  var r = _sv16(sm, c);
+  if (f && sm.R.sevSeq.length>n && !sm.R.sevSeq[n]){ S.m.morale = clamp(S.m.morale-6,0,100); sLog(sm,'Der Fehlwurf drückt auf die Stimmung in der Mannschaft.','info'); }
+  return r;
+};
+A.mc = function(el){
+  var M = S.match, sm = M.sm, p = sm.pend; if (!p) return;
+  var c = p.type==='sev' ? {side:el.dataset.s, h:el.dataset.h, style:(S.mg&&S.mg.style)||'normal'} : {id:el.dataset.v};
+  if (c.style==='dreher' && !resinOk()) c.style = 'normal';
+  if (c.style==='dreher') c.h = 'U';
+  sm.pend = null; S.mg = null;
+  applySpecial(sm, p, c);
+  if (sm.pend2){ sm.pend = sm.pend2; sm.pend2 = null; clearInterval(tick); M.state = 'pause'; render(); return; }
+  sFinish(sm);
+  M.i = sm.min; M.state = 'run';
+  if (sm.min>=60){ finishMatch(); return; }
+  M.outcome = outcomeOf(S.result.tl[sm.min-1]); render(); holdTick(holdMs());
+};
+A.sevwho = function(el){
+  var M = S.match, sm = M.sm, p = sm.pend; if (!p || p.type!=='sevwho') return;
+  if (el.dataset.v==='self'){
+    sm.selfFoul = true; sm.pend = {type:'sev', role:'shoot', hint:p.hint, foul:true}; S.mg = null; render(); return;
+  }
+  sm.pend = null; S.mg = null; sm.skipH = true; sm.noPen = true;
+  teamSev(sm, 'Du wurdest gefoult.', true);
+  sFinish(sm); M.i = sm.min; M.state = 'run';
+  if (sm.min>=60){ finishMatch(); return; }
+  M.outcome = outcomeOf(S.result.tl[sm.min-1]); render(); holdTick(holdMs());
 };
 
 
