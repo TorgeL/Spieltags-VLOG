@@ -2249,7 +2249,7 @@ function vStats(){
     +'<section class="card"><p class="small">Mache jetzt einen Screenshot von deiner Leistung und schicke ihn deinen Freunden.</p>'
     +'<p>Skillpunkte: <b>+'+y.gain+'</b> (jetzt '+P.sp+')</p>'
     +'<button class="btn" data-a="again">Weiterspielen</button>'
-    +'<div class="tiles"><button class="btn ghost" data-a="skills">Skill-Baum'+(P.sp?'<small>'+P.sp+' SP offen</small>':'')+'</button><button class="btn ghost" data-a="ach">Erfolge<small>'+Object.keys(P.ach).length+'/'+ACH.length+'</small></button><button class="btn ghost" data-a="career">Karriere-Statistik</button><button class="btn ghost" data-a="menu">Menü</button></div></section>';
+    +'<div class="tiles"><button class="btn ghost" data-a="skills">Skill-Baum'+(P.sp?'<small>'+P.sp+' SP offen</small>':'')+'</button><button class="btn ghost" data-a="ach">Erfolge<small>'+achN()+'/'+achTotal()+'</small></button><button class="btn ghost" data-a="career">Karriere-Statistik</button><button class="btn ghost" data-a="menu">Menü</button></div></section>';
 }
 
 function vSkills(){
@@ -2276,14 +2276,14 @@ function vSkills(){
 }
 
 function vAch(){
-  var n = Object.keys(P.ach).length;
+  var n = achN();
   var cards = ACH.map(function(a){
     var got = !!P.ach[a.id], hid = a.hid && !got, pr = '';
     if (!got && a.goal){ var v = Math.min(a.goal, a.pr()); pr = '<div class="bar"><b style="width:'+(v/a.goal*100)+'%"></b></div><span class="small">'+v+' von '+a.goal+'</span>'; }
     return '<div class="ach'+(got?' got':'')+'"><div class="medal">'+(got?'✓':hid?'?':'·')+'</div><div class="at"><b>'+(hid?'Versteckter Erfolg':esc(a.n))+'</b><span class="small">'+(hid?'Wird bei einer besonderen Aktion freigeschaltet.':esc(a.d))+'</span>'+pr+'</div></div>';
   }).join('');
   var soon = ACH_SOON.map(function(s){ return '<span class="chip">'+esc(s)+'</span>'; }).join('');
-  return '<section class="card"><h2>Erfolge</h2><p class="lead">'+n+' von '+ACH.length+' freigeschaltet. Dein Kapitäns-Fortschritt: '+Math.min(7,P.streak6)+' von 7 Spielen mit mindestens 6,5.</p></section>'
+  return '<section class="card"><h2>Erfolge</h2><p class="lead">'+n+' von '+achTotal()+' freigeschaltet. Dein Kapitäns-Fortschritt: '+Math.min(7,P.streak6)+' von 7 Spielen mit mindestens 6,5.</p></section>'
     +'<section class="card"><div class="achs">'+cards+'</div></section>'
     +'<section class="card"><h3>Kommt mit der Saison</h3><div class="chips">'+soon+'</div><button class="btn" data-a="back">Zurück</button></section>';
 }
@@ -2615,7 +2615,7 @@ go = function(st){
 function tipOf(p){ return hard() ? p.tip.replace(/\s*\((Portion )?[\d,]+ bis [\d,]+\)/,'') : p.tip; }
 
 function vSetup(){
-  var p = posOf(S.pos), na = Object.keys(P.ach).length, hd = hard();
+  var p = posOf(S.pos), na = achN(), hd = hard();
   return '<section class="card"><h2>Heimspieltag</h2>'
     +setupLead()
     +'<div class="setup">'+jersey()
@@ -2628,7 +2628,7 @@ function vSetup(){
     +diffPills()+'<p class="tip">'+diffTip()+'</p></div>'
     +'<button class="btn" data-a="start">Spieltag starten</button>'
     +'<div class="tiles"><button class="btn ghost" data-a="skills">Skill-Baum'+(P.sp?'<small>'+P.sp+' SP offen</small>':'')+'</button>'
-    +'<button class="btn ghost" data-a="ach">Erfolge<small>'+na+'/'+ACH.length+'</small></button>'
+    +'<button class="btn ghost" data-a="ach">Erfolge<small>'+na+'/'+achTotal()+'</small></button>'
     +'<button class="btn ghost" data-a="career">Karriere-Statistik</button><button class="btn ghost" data-a="menu">Menü</button></div>'
     +'</section>';
 }
@@ -2664,7 +2664,7 @@ function vCareer(){
   var fd = c.food||{}, fk = Object.keys(fd).sort(function(a,b){ return fd[b]-fd[a]; });
   grp('Alltag', [['Lieblingsessen', fk.length?fk[0]+' ('+fd[fk[0]]+'x)':'–'],['Löffel Kaffeepulver', fmt(c.spoons||0)]]);
   grp('Vlog', [['Views gesamt', nf(c.viewsSum)],['Meiste Views', nf(c.bestViews)],['Durchschnitt', g ? nf(c.viewsSum/g) : '–'],['Get Ready With Me', c.grwm]]);
-  grp('Drumherum', [['Minuten gespielt', c.minutes],['Erfolge', Object.keys(P.ach).length+' von '+ACH.length],['Skillpunkte offen', P.sp],['Standing beim Trainer', P.coach>=65?'sehr gut':P.coach>=45?'solide':'angespannt'],['Mannschaftskasse', P.kasse+' Euro'],['Partys', c.parties],['DJ-Treffer', c.djHits],['Jugendspiele geholfen', c.youth],['Snacks vorbereitet', c.snacks]]);
+  grp('Drumherum', [['Minuten gespielt', c.minutes],['Erfolge', achN()+' von '+achTotal()],['Skillpunkte offen', P.sp],['Standing beim Trainer', P.coach>=65?'sehr gut':P.coach>=45?'solide':'angespannt'],['Mannschaftskasse', P.kasse+' Euro'],['Partys', c.parties],['DJ-Treffer', c.djHits],['Jugendspiele geholfen', c.youth],['Snacks vorbereitet', c.snacks]]);
   return '<section class="card"><h2>Karriere-Statistik</h2><p class="lead">Karriere '+(SLOT+1)+(g?'':'. Noch kein Spiel absolviert.')+'</p>'+rows+'<button class="btn" data-a="back">Zurück</button></section>';
 }
 
@@ -3920,7 +3920,7 @@ function vNewCareer(){
     +playerForm()
     +'<button class="btn" data-a="lg">Saison starten</button>'
     +'<div class="tiles"><button class="btn ghost" data-a="skills">Skill-Baum'+(P.sp?'<small>'+P.sp+' SP offen</small>':'')+'</button>'
-    +'<button class="btn ghost" data-a="ach">Erfolge<small>'+Object.keys(P.ach).length+'/'+ACH.length+'</small></button>'
+    +'<button class="btn ghost" data-a="ach">Erfolge<small>'+achN()+'/'+achTotal()+'</small></button>'
     +'<button class="btn ghost" data-a="career">Karriere-Statistik</button><button class="btn ghost" data-a="menu">Menü</button></div></section>';
 }
 var _lg9 = A.lg;
@@ -4476,17 +4476,24 @@ function xmRoster(){
   }
   P.xmRoster = r; saveP(); return r;
 }
+function xmTag(g, mate){
+  if (g==='m') return pick(['Partner von ','Bruder von ','Freund von ','Cousin von '])+mate;
+  if (g==='w2') return 'Freundinnen von '+mate;
+  return pick(['Partnerin von ','Schwester von ','Freundin von ','Cousine von '])+mate;
+}
 function xmPlayers(){
-  var r = xmRoster(), mi = 0, wi = 0, tags = shuffle(XM_C.map(function(c){ return c.id; }).filter(function(x){ return x!=='geschenke'; })).slice(0,5), all = [];
-  var mates = ['Marten','Svenja','Hauke','Imke','Tjark','Gesa'];
+  var r = xmRoster(), mi = 0, wi = 0, all = [];
+  var mates = ['Marten','Svenja','Hauke','Imke','Tjark','Gesa','Lena','Arne'];
+  var men = XM_C.filter(function(c){ return c.g==='m' && c.id!=='geschenke'; }).map(function(c){ return c.id; });
+  var wegs = shuffle(men).slice(0,2);
+  var others = shuffle(XM_C.map(function(c){ return c.id; }).filter(function(x){ return x!=='geschenke' && wegs.indexOf(x)<0; })).slice(0,3);
   XM_C.forEach(function(c){
-    var p = {id:c.id, w:c.w, k:c.k, d:c.d, sk:c.sk, fun:c.fun, team:c.team};
+    var p = {id:c.id, w:c.w, k:c.k, d:c.d, sk:c.sk, fun:c.fun, team:c.team, g:c.g};
     if (c.g==='m') p.n = c.id==='geschenke' ? 'Pascal' : r.m[mi++];
     else if (c.g==='w2'){ p.n = r.w[wi++]+' & '+r.w[wi++]; }
     else p.n = r.w[wi++];
-    if (c.id==='geschenke'){ /* Pascal bleibt immer Pascal */ }
-    var ti = tags.indexOf(c.id);
-    if (ti>=0 && c.id!=='geschenke'){ p.tag = ti<2 ? 'alter Weggefährte von '+pick(TEAMS).n : pick(XM_TAGS.slice(0,4))(pick(mates)); }
+    if (wegs.indexOf(c.id)>=0) p.tag = 'alter Weggefährte von '+pick(TEAMS).n;
+    else if (others.indexOf(c.id)>=0) p.tag = xmTag(c.g, pick(mates));
     all.push(p);
   });
   return all;
@@ -4885,11 +4892,11 @@ function awayFix(h){
     .replace('es ist Heimspiel.','heute geht es auswärts zu '+esc(S.opp)+'.')
     .replace('Sieg im Heimspiel','Auswärtssieg');
   h = h.replace(/<div class="board"><div class="tm">(.*?)<\/div><div class="sc"><span id="sh">(\d+)<\/span>:<span id="sa">(\d+)<\/span><\/div><div class="tm">(.*?)<\/div><\/div>/g,
-    function(m,a,x,y,b){ return '<div class="board"><div class="tm">'+b+'</div><div class="sc"><span id="sa">'+y+'</span>:<span id="sh">'+x+'</span></div><div class="tm">'+a+'</div></div>'; });
+    function(m,a,x,y,b){ return '<div class="board" data-aw="1"><div class="tm">'+b+'</div><div class="sc"><span id="sa">'+y+'</span>:<span id="sh">'+x+'</span></div><div class="tm">'+a+'</div></div>'; });
   h = h.replace(/<div class="sh-sc"><span>(.*?)<\/span><b>(\d+) : (\d+)<\/b><span>(.*?)<\/span><\/div><div class="small c">Halbzeit (\d+):(\d+)<\/div>/,
-    function(m,a,x,y,b,h0,h1){ return '<div class="sh-sc"><span>'+b+'</span><b>'+y+' : '+x+'</b><span>'+a+'</span></div><div class="small c">Auswärtsspiel · Halbzeit '+h1+':'+h0+'</div>'; });
+    function(m,a,x,y,b,h0,h1){ return '<div class="sh-sc" data-aw="1"><span>'+b+'</span><b>'+y+' : '+x+'</b><span>'+a+'</span></div><div class="small c">Auswärtsspiel · Halbzeit '+h1+':'+h0+'</div>'; });
   h = h.replace(/<span>Spielbericht<\/span>/,'<span>Spielbericht · Auswärts</span>');
-  h = h.replace(/<p class="lead">(.*?) (\d+) : (\d+) (.*?)<\/p>/, function(m,a,x,y,b){ return '<p class="lead">'+b+' '+y+' : '+x+' '+a+'</p>'; });
+  h = h.replace(/<p class="lead">([^<]*?) (\d+) : (\d+) ([^<]*?)<\/p>/, function(m,a,x,y,b){ return '<p class="lead" data-aw="1">'+b+' '+y+' : '+x+' '+a+'</p>'; });
   return h;
 }
 Object.keys(V).forEach(function(k){
@@ -4912,6 +4919,79 @@ V.stats = function(){
     h = '<section class="card alertc"><h2>Verletzung: '+esc(I.n)+'</h2><p>'+(min?'In der '+min+'. Minute ist es passiert. ':'')+esc(INJ_WHY[I.id]||'Du bist unglücklich gestürzt.')+'</p><p><b>Der Arzt sagt: noch '+I.left+' Spiel'+(I.left>1?'e':'')+' Pause.</b> In der Woche entscheidest du, wie du damit umgehst.</p></section>'+h;
   }
   return h;
+};
+
+/* ===== Feedback 5.11.: Erfolge mit Stufen, Spanische Schule, Trainer als Weggefährte ===== */
+ACH.forEach(function(a){
+  var m = {ente1:'ente',ente5:'ente',ente15:'ente',sk1:'sk',sk5:'sk',sk10:'sk',mr1:'mr',mr10:'mr',mr25:'mr'}[a.id];
+  if (m) a.grp = m;
+});
+var ACH_GRP = {
+  ente:{n:'Hinten kackt die Ente', d:'Nach Halbzeit-Rückstand noch gewonnen.'},
+  sk:{n:'7m-Killer', d:'Siebenmeter gehalten.'},
+  mr:{n:'Mr. 100%', d:'Spiele mit 100 % Wurfquote (mindestens 3 Tore).'}
+};
+var TIER_N = ['Bronze','Silber','Gold'], TIER_E = ['🥉','🥈','🥇'];
+ACH.push({id:'spanisch', n:'Spanische Schule', d:'50-mal „Kleingruppe mit dem Kreis“ gespielt.', hid:1});
+function achStat(){
+  var n = 0, t = 0, seen = {};
+  ACH.forEach(function(a){
+    if (a.grp){ if (!seen[a.grp]){ seen[a.grp] = 1; t++; } if (P.ach[a.id] && seen[a.grp]!==2){ seen[a.grp] = 2; n++; } }
+    else { t++; if (P.ach[a.id]) n++; }
+  });
+  return {n:n, t:t};
+}
+function achN(){ return achStat().n; }
+function achTotal(){ return achStat().t; }
+V.ach = function(){
+  var st = achStat(), seen = {};
+  var one = function(a){
+    var got = !!P.ach[a.id], hid = a.hid && !got, pr = '';
+    if (!got && a.goal){ var v = Math.min(a.goal, a.pr()); pr = '<div class="bar"><b style="width:'+(v/a.goal*100)+'%"></b></div><span class="small">'+v+' von '+a.goal+'</span>'; }
+    return '<div class="ach'+(got?' got':'')+'"><div class="medal">'+(got?'✓':hid?'?':'·')+'</div><div class="at"><b>'+(hid?'Versteckter Erfolg':esc(a.n))+'</b><span class="small">'+(hid?'Wird bei einer besonderen Aktion freigeschaltet.':esc(a.d))+'</span>'+pr+'</div></div>';
+  };
+  var cards = ACH.map(function(a){
+    if (!a.grp) return one(a);
+    if (seen[a.grp]) return '';
+    seen[a.grp] = 1;
+    var tiers = ACH.filter(function(x){ return x.grp===a.grp; }), g = ACH_GRP[a.grp], lvl = 0;
+    tiers.forEach(function(x,i){ if (P.ach[x.id]) lvl = i+1; });
+    var cur = tiers[0].pr(), nxt = tiers[lvl], line, pr = '';
+    if (nxt){ var v = Math.min(nxt.goal, cur); pr = '<div class="bar"><b style="width:'+(v/nxt.goal*100)+'%"></b></div><span class="small">Nächste Stufe ('+TIER_N[lvl]+'): '+v+' von '+nxt.goal+'</span>'; }
+    line = tiers.map(function(x,i){ return TIER_N[i]+' ab '+x.goal; }).join(' · ');
+    return '<div class="ach'+(lvl?' got':'')+'"><div class="medal">'+(lvl?TIER_E[lvl-1]:'·')+'</div><div class="at"><b>'+esc(g.n)+(lvl?' · '+TIER_N[lvl-1]:'')+'</b><span class="small">'+esc(g.d)+' '+line+'.</span>'+pr+'</div></div>';
+  }).join('');
+  var soon = ACH_SOON.map(function(s){ return '<span class="chip">'+esc(s)+'</span>'; }).join('');
+  return '<section class="card"><h2>Erfolge</h2><p class="lead">'+st.n+' von '+st.t+' freigeschaltet. Dein Kapitäns-Fortschritt: '+Math.min(7,P.streak6)+' von 7 Spielen mit mindestens 6,5.</p></section>'
+    +'<section class="card"><div class="achs">'+cards+'</div></section>'
+    +'<section class="card"><h3>Kommt mit der Saison</h3><div class="chips">'+soon+'</div><button class="btn" data-a="back">Zurück</button></section>';
+};
+V.ach = (function(f){ return function(){ return awayFix(f()); }; })(V.ach);
+
+/* Spanische Schule */
+var _cs15 = crunchShoot;
+crunchShoot = function(sm, c){
+  var r = _cs15(sm, c);
+  if (c && c.id==='group'){ P.career.kg = (P.career.kg||0)+1; if (P.career.kg>=50) grantAch('spanisch'); }
+  return r;
+};
+
+/* Trainer der Gegner als alter Weggefährte */
+WEG_ROLE.push({r:'TR', t:'ist der Trainer der Gegner. Er hat dich früher in der Jugend trainiert und weiß genau, was du kannst.'});
+var _wl15 = wegLine;
+wegLine = function(w){
+  if (w.r==='TR') return 'Trainer '+w.n+' steht an der gegnerischen Seitenlinie. Er hat dich früher in der Jugend trainiert und kennt deine Stärken.';
+  return _wl15(w);
+};
+
+/* Auswärts: klare Überschrift im Spielbericht */
+var _af15 = awayFix;
+awayFix = function(h){
+  var o = _af15(h);
+  if (S.away && S.season && !S.coach){
+    o = o.replace(/(<div class="res[^"]*">)Sieg(<\/div>)/,'$1Auswärtssieg$2').replace(/(<div class="res[^"]*">)Niederlage(<\/div>)/,'$1Niederlage auswärts$2').replace(/(<div class="res[^"]*">)Unentschieden(<\/div>)/,'$1Unentschieden auswärts$2');
+  }
+  return o;
 };
 
 
