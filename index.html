@@ -1153,7 +1153,7 @@ var ACH = [
   {id:'pfanne', n:'Pfannen-Held', d:'Mit der Bratpfanne in der Tasche gewonnen. Der Rücken dankt.', hid:1},
   {id:'l99', n:'Nummer 99', d:'Im Leibchen ein Tor geworfen.', hid:1}
 ];
-var ACH_SOON = ['Meister','Torschützenkönig','Torwart der Saison','Spielmacher der Saison','All-Star-Team','Saison-MVP','Siegerkicken','Geldsegen'];
+var ACH_SOON = [];
 function achOf(id){ for (var i=0;i<ACH.length;i++) if (ACH[i].id===id) return ACH[i]; }
 
 var PLAYS_ALL = [
@@ -1181,7 +1181,7 @@ var KSIT = {
   rueck: {t:'Freier Wurf aus dem Rückraum. Wie reagierst du?', base:.30, o:[['wait','Abwarten','Mit dem Block zusammenspielen.','stellung'],['early','Früh runter','Ab in den Hürdensitz, eine Ecke ist komplett zu.','gtech'],['react','Auf Reflex setzen','Explosiv aus der Grundstellung reagieren.','reflexe']]},
   kreis: {t:'Der Kreisläufer dreht sich frei zum Wurf.', base:.27, o:[['line','Auf der Linie bleiben','Defensiver Versuch, den Ball zu halten.','stellung'],['step','Zwei Schritte entgegen','Dem Kreisläufer den Winkel verkleinern.','gtech',1],['hand','Voll auf die Wurfhand','Sehr offensiver Stil.','reflexe',1]]},
   aussen: {t:'Der Außen steht frei und holt aus.', base:.28, o:[['post','Am Pfosten kleben','Im kurzen Eck passiert nichts.','stellung'],['off','Offensiv agieren','Nur keinen Heber kassieren.','reflexe',1],['read','Den Werfer lesen','Warten und dann lang zumachen.','gtech']]},
-  tempo: {t:'Tempogegenstoß! Der Gegner läuft allein auf dich zu.', base:.26, o:[['class','Klassisch','Immerhin wird es kein Trickwurf-Tor.','stellung'],['jump','Entgegen springen','Es ist schließlich dein Strafraum.','reflexe',1],['lure','Den Werfer locken','Eine Seite anbieten und dann schließen.','gtech']]}
+  tempo: {t:'Tempogegenstoß! Der Gegner läuft allein auf dich zu.', base:.26, o:[['class','Klassisch','Immerhin wird es kein Trickwurf-Tor.','stellung'],['jump','Entgegen springen','Es ist schließlich dein Torraum.','reflexe',1],['lure','Den Werfer locken','Eine Seite anbieten und dann schließen.','gtech']]}
 };
 
 /* ===== V2b: mehr Events, Kommentare, Pools ===== */
@@ -1731,16 +1731,16 @@ function simStep(sm){
   var min = ++sm.min, R = sm.R;
   sm.cur = (min===1 ? sm.pre.slice() : []);
   if (min>1 && min%15===1){ sm.dayH = clamp(sm.dayH*.5+rnd(-3,3),-5,5); sm.dayO = clamp(sm.dayO*.5+rnd(-sm.oo.vari,sm.oo.vari),-8,8); }
-  if (sm.split && sm.reentered && sm.onCourt && !sm.exited2 && min>=sm.exit2){
+  if (sm.split && sm.reentered && sm.onCourt && !sm.out && !sm.exited2 && min>=sm.exit2){
     sm.exited2 = true; sm.exited = true; sm.retMin = 0; sm.onCourt = false; sm.benchT = 0;
     sLog(sm, 'Der Trainer wechselt wieder: Dein Teamkollege übernimmt die Position bis zum Schluss.', 'info');
   }
-  if (sm.canPlay && sm.onCourt && !sm.exited && !sm.reentered && min>=12){
+  if (sm.canPlay && sm.onCourt && !sm.out && !sm.exited && !sm.reentered && min>=12){
     var poor = sm.gk ? (R.conc>=17+(min>=40?0:3) && R.saves<R.conc*.35) : (R.shots-R.goals>=7 && R.goals<R.shots*.4);
     if ((sm.exitMin && min>=sm.exitMin) || (poor && min>=20 && chance(.12))){
       sm.exited = true; sm.onCourt = false; sm.benchT = 0;
       var back = min+ri(5,10), comeback = back<=56 && !sm.noBack && chance(poor ? .3 : .55);
-      if (sm.split){ back = sm.retSplit; comeback = true; }
+      if (sm.split){ back = sm.retSplit-1; comeback = true; }
       sm.retMin = comeback ? back : 0;
       if (sm.split) sLog(sm, 'Der Trainer wechselt dich aus: Du teilst dir die Position mit deinem Teamkollegen. Er übernimmt jetzt.', 'info'); else
       sLog(sm, poor ? (comeback ? 'Der Trainer nimmt dich raus. Heute läuft es nicht, du bekommst eine Pause auf der Bank.' : 'Der Trainer nimmt dich raus. Heute läuft es nicht, die Bank übernimmt.')
@@ -1904,8 +1904,8 @@ function sevSave(sm, c){
   else if (c.side===sSide){ pS = c.h===sH ? .70 : .30+.05*rf+(sH==='U'?.06*sg:0); }
   else pS = .04+.02*rf;
   pS = clamp(pS+(sm.form-60)/300+.02*ef('nerven')-(sm.oo.exp?.03:0),.02,.9);
-  if (chance(pS)){ R.sevS++; R.saves++; R.lastKey = sm.min; sLog(sm,'7-Meter gehalten! Die Halle tobt.'); }
-  else { R.conc++; sm.as++; sLog(sm,'7-Meter drin ('+(sSide==='L'?'links':'rechts')+' '+(sH==='O'?'oben':'unten')+'). Du warst nicht in der Ecke.'); }
+  if (chance(pS) || (style!=='heber' && c.side===sSide && c.h===sH)){ R.sevS++; R.saves++; R.lastKey = sm.min; sLog(sm,'7-Meter gehalten! Die Halle tobt.'); }
+  else { R.conc++; sm.as++; sLog(sm,'7-Meter drin ('+(sSide==='L'?'links':'rechts')+' '+(sH==='O'?'oben':'unten')+'). '+(c.side==='M' ? 'Du bleibst in der Mitte, der Ball geht in die Ecke.' : c.side===sSide ? (c.h===sH ? 'Richtige Ecke, aber der Wurf ist zu hart und zu genau. Da hilft auch dein Sprung nichts.' : 'Richtige Seite, aber der Ball geht '+(sH==='O'?'oben':'unten')+' vorbei.') : 'Du warst nicht in der Ecke.')); }
 }
 
 function crunchOptions(sm){
@@ -1994,7 +1994,7 @@ function crunchKeep(sm, c, p0){
   if (chance(clamp(pp,.08,.88))){
     R.saves++; R.crG++; R.lastKey = sm.min; sm.lastSave = sm.min; sLog(sm,'Crunch Time: '+svText(sit==='tempo'?'tempo':sit));
     if (chance(.22+.15*ef('lpass'))){ sm.hs++; sLog(sm,'Langer Pass nach vorn, Konter, Tor!'); }
-  } else { R.conc++; sm.as++; sLog(sm,'Crunch Time: '+cnText(sit),'info'); }
+  } else { R.conc++; sm.as++; sLog(sm,'Crunch Time: '+(sit==='tempo' && c && c.id==='class' ? 'Der Angreifer schließt hart und gezielt ab.' : cnText(sit)),'info'); }
 }
 
 function playOptions(sm){
@@ -2507,8 +2507,8 @@ function finishRun(){
   if (P.sevStreak>=10) give('zv'); if (c.djHits>=3) give('dj');
   if (P.streak6>=7 && P.coach>=70 && S.m.morale>=65 && c.games>=12) give('cap');
   if (S.bag.indexOf('unicorn')>=0 && views>=5000) give('uni');
-  if (S.bag.indexOf('sock')>=0 && R.res==='win') give('sock');
-  if (S.bag.indexOf('pan')>=0 && R.res==='win') give('pfanne');
+  if (S.canPlay && S.bag.indexOf('sock')>=0 && R.res==='win') give('sock');
+  if (S.canPlay && S.bag.indexOf('pan')>=0 && R.res==='win') give('pfanne');
   if (S.leib && R.goals>0) give('l99');
   if (c.youth>=10) give('jug'); if (R.dpar) give('dpar'); if (S.hairSponsor) give('hair');
   var gain = (R.res==='win'?1:0)+((R.rating>=7||(!gk&&R.shots>=3&&R.goals>=R.shots))?1:0)+((R.goals>=6||R.saves>=14)?1:0)+(R.mvp?1:0)+(got.length>=2?1:0);
@@ -2664,7 +2664,7 @@ function vCareer(){
   var fd = c.food||{}, fk = Object.keys(fd).sort(function(a,b){ return fd[b]-fd[a]; });
   grp('Alltag', [['Lieblingsessen', fk.length?fk[0]+' ('+fd[fk[0]]+'x)':'–'],['Löffel Kaffeepulver', fmt(c.spoons||0)]]);
   grp('Vlog', [['Views gesamt', nf(c.viewsSum)],['Meiste Views', nf(c.bestViews)],['Durchschnitt', g ? nf(c.viewsSum/g) : '–'],['Get Ready With Me', c.grwm]]);
-  grp('Drumherum', [['Minuten gespielt', c.minutes],['Erfolge', achN()+' von '+achTotal()],['Skillpunkte offen', P.sp],['Standing beim Trainer', P.coach>=65?'sehr gut':P.coach>=45?'solide':'angespannt'],['Mannschaftskasse', P.kasse+' Euro'],['Partys', c.parties],['DJ-Treffer', c.djHits],['Jugendspiele geholfen', c.youth],['Snacks vorbereitet', c.snacks]]);
+  grp('Drumherum', [['Minuten gespielt', c.minutes],['Erfolge', achN()+' von '+achTotal()],['Skillpunkte offen', P.sp],['Standing beim Trainer', P.coach>=65?'sehr gut':P.coach>=45?'solide':'angespannt'],['Partys', c.parties],['DJ-Treffer', c.djHits],['Jugendspiele geholfen', c.youth],['Snacks vorbereitet', c.snacks]]);
   return '<section class="card"><h2>Karriere-Statistik</h2><p class="lead">Karriere '+(SLOT+1)+(g?'':'. Noch kein Spiel absolviert.')+'</p>'+rows+'<button class="btn" data-a="back">Zurück</button></section>';
 }
 
@@ -3462,8 +3462,8 @@ var AMTS = [
   {id:'bier', n:'Bierwart', item:'Bierkasten', s:'Du kümmerst dich um das Siegerbier.',
    good:'Der Bierkasten steht kalt. Nach einem Sieg wird gefeiert.', bad:'Bierkasten vergessen. Die Siegesfeier fällt trocken aus.',
    fg:function(){ S.winBeer = true; return {morale:2}; }, fb:function(){ return {morale:-3}; }},
-  {id:'beauty', n:'Beautywart', item:'Haarspray und Schminke', s:'Du sorgst für den guten Look.',
-   good:'Alle sehen aus wie aus dem Katalog. Die Fotos werden gut.', bad:'Haarspray vergessen. Die Frisuren hängen.',
+  {id:'beauty', n:'Beautywart', item:'Haargel und Parfüm', s:'Du sorgst für den guten Look.',
+   good:'Alle sehen aus wie aus dem Katalog. Die Fotos werden gut.', bad:'Haargel vergessen. Die Frisuren hängen.',
    fg:function(){ S.vm *= 1.06; return {morale:2}; }, fb:function(){ return {morale:-2}; }}
 ];
 function amtOf(id){ for (var i=0;i<AMTS.length;i++) if (AMTS[i].id===id) return AMTS[i]; return null; }
@@ -3542,7 +3542,7 @@ function evKg(){
     opts:[evOpt('zeit','Zeitnehmer','Zeit, Pfeife und Nervenstärke.'),evOpt('sek','Sekretär','Spielberichtsbogen und Spielernummern.'),evOpt('sprecher','Hallensprecher','Du moderierst die Tore.')],
     pick:function(id){
       var bad = chance(.25), lines = {
-        zeit: bad ? 'Du stoppst die Zeit bei der falschen Mannschaft. Der Schiedsrichter schaut dich lange an.' : 'Du stoppst die Zeit sauber. Der Schiedsrichter nickt.',
+        zeit: bad ? 'Du stoppst die Zeit im falschen Moment. Der Schiedsrichter schaut dich lange an.' : 'Du stoppst die Zeit sauber. Der Schiedsrichter nickt.',
         sek: bad ? 'Du schreibst die falsche Nummer in den Bericht. Zum Glück fällt es früh auf.' : 'Der Spielbericht ist sauber geführt. Die Jugend bedankt sich.',
         sprecher: bad ? 'Du verwechselst die Torschützen. Die Zuschauer lachen, du auch.' : 'Du moderierst die Tore mit Gefühl. Die Eltern jubeln.'};
       S.coachD += bad ? 0 : 1; P.career.kg = (P.career.kg||0)+1;
@@ -4489,7 +4489,7 @@ function xmPlayers(){
   var others = shuffle(XM_C.map(function(c){ return c.id; }).filter(function(x){ return x!=='geschenke' && wegs.indexOf(x)<0; })).slice(0,3);
   XM_C.forEach(function(c){
     var p = {id:c.id, w:c.w, k:c.k, d:c.d, sk:c.sk, fun:c.fun, team:c.team, g:c.g};
-    if (c.g==='m') p.n = c.id==='geschenke' ? 'Pascal' : r.m[mi++];
+    if (c.g==='m') p.n = c.id==='geschenke' ? 'Paschi' : r.m[mi++];
     else if (c.g==='w2'){ p.n = r.w[wi++]+' & '+r.w[wi++]; }
     else p.n = r.w[wi++];
     if (wegs.indexOf(c.id)>=0) p.tag = 'alter Weggefährte von '+pick(TEAMS).n;
@@ -4527,7 +4527,7 @@ var XM_LINES = [
   function(p){ return xmWho(p)+' trifft zum 3:2. Die Zuschauer jubeln.'; },
   function(p){ return xmWho(p)+' bekommt den Ball im Gewühl und bringt ihn irgendwie im Tor unter.'; },
   function(p){ return xmWho(p)+' lässt die Abwehr stehen. Das Kostüm raschelt, der Ball sitzt.'; },
-  function(p){ return 'Alle lachen, als '+xmWho(p)+' im Strafraum über die eigenen Füße stolpert.'; }
+  function(p){ return 'Alle lachen, als '+xmWho(p)+' im 6m-Kreis über die eigenen Füße stolpert.'; }
 ];
 function xmOpp(D){
   var used = D.picks.map(function(c){ return c.id; }), me = D.all.filter(function(c){ return used.indexOf(c.id)<0; });
@@ -4544,7 +4544,7 @@ function xmGame(D, step, w){
       var gk = posOf(D.ownPos).gk, g = gk ? 0 : ri(0,4)+(id==='full'?1:0), d = {morale:id==='fun'?6:win?3:1,energy:-3};
       var star = pick(D.picks), tx = (win?'Sieg':'Niederlage')+' gegen '+opp.team+'. '+pick(XM_LINES)(star)+' '+(gk ? 'Du hältst ordentlich mit.' : (g ? 'Du wirfst '+g+' Tore.' : 'Du hältst gut mit.'));
       var pas = D.picks.filter(function(c){ return c.id==='geschenke'; })[0];
-      if (pas && chance(.5)) tx += ' Pascal stolpert über seine Geschenke, die Halle liegt am Boden vor Lachen.';
+      if (pas && chance(.5)) tx += ' Paschi stolpert über seine Geschenke, die Halle liegt am Boden vor Lachen.';
       D.fun += fun/6+(id==='fun'?1:0); D.wins += win?1:0;
       if (id==='full' && chance(.05) && !P.inj){ var I = newInjury(); S.newInj = I; tx += ' Beim Anlauf verdrehst du dir den Fuß: '+I.n+'.'; }
       var res = {t:tx, c:chipsOf(d)};
@@ -4582,7 +4582,7 @@ function evFeier(){
     pick:function(id){
       if (id==='go'){
         P.kasse -= 500; saveP(); grantAch('secret');
-        var l = ['Beim Wichteln zieht Pascal die Schuhe, die er nie trägt.','Der Kassenwart gewinnt das Spiel mit dem Würfeln und macht aus Versehen den Abwasch.','Die Mannschaft singt falsch, aber laut, und der Trainer filmt heimlich mit.'];
+        var l = ['Beim Wichteln zieht Paschi die Schuhe, die er nie trägt.','Der Kassenwart gewinnt das Spiel mit dem Würfeln und macht aus Versehen den Abwasch.','Die Mannschaft singt falsch, aber laut, und der Trainer filmt heimlich mit.'];
         return {t:'Ihr feiert bei Plätzchen, Punsch und Wichteln. '+pick(l), c:chipsOf({morale:12,energy:-3})};
       }
       return {t:'Ihr verschiebt die Feier. Die Kasse freut sich, die Mannschaft ein bisschen weniger.', c:chipsOf({morale:-2})};
@@ -4727,7 +4727,7 @@ var _dayp12 = A.dayp;
 A.dayp = function(el){
   _dayp12(el);
   if (el.dataset.v==='women' && S.day && S.day.res && chance(.35))
-    S.day.res.t += '\u2063Der Entwickler hat dieses Mal die Tasche für dich gepackt und sie dir in die Umkleide gestellt. Wenn dir das Spiel gefällt, gib ihm doch mal einen Kaffee aus :)';
+    S.day.res.t += '\u2063Der Entwickler hat dir deine Tasche gepackt und in die Kabine gestellt. Gefällt dir das Spiel? Gib ihm doch gerne ein Getränk aus :)';
 };
 var _vMenu12 = V.menu;
 V.menu = function(){
@@ -4964,7 +4964,7 @@ V.ach = function(){
   var soon = ACH_SOON.map(function(s){ return '<span class="chip">'+esc(s)+'</span>'; }).join('');
   return '<section class="card"><h2>Erfolge</h2><p class="lead">'+st.n+' von '+st.t+' freigeschaltet. Dein Kapitäns-Fortschritt: '+Math.min(7,P.streak6)+' von 7 Spielen mit mindestens 6,5.</p></section>'
     +'<section class="card"><div class="achs">'+cards+'</div></section>'
-    +'<section class="card"><h3>Kommt mit der Saison</h3><div class="chips">'+soon+'</div><button class="btn" data-a="back">Zurück</button></section>';
+    +'<section class="card"><button class="btn" data-a="back">Zurück</button></section>';
 };
 V.ach = (function(f){ return function(){ return awayFix(f()); }; })(V.ach);
 
@@ -4984,15 +4984,6 @@ wegLine = function(w){
   return _wl15(w);
 };
 
-/* Auswärts: klare Überschrift im Spielbericht */
-var _af15 = awayFix;
-awayFix = function(h){
-  var o = _af15(h);
-  if (S.away && S.season && !S.coach){
-    o = o.replace(/(<div class="res[^"]*">)Sieg(<\/div>)/,'$1Auswärtssieg$2').replace(/(<div class="res[^"]*">)Niederlage(<\/div>)/,'$1Niederlage auswärts$2').replace(/(<div class="res[^"]*">)Unentschieden(<\/div>)/,'$1Unentschieden auswärts$2');
-  }
-  return o;
-};
 
 /* ===== Feedback 5.11. Teil 2: Kasse aus, Kempa, Foulelfmeter ===== */
 (function(){
@@ -5104,6 +5095,56 @@ A.sevwho = function(el){
   if (sm.min>=60){ finishMatch(); return; }
   M.outcome = outcomeOf(S.result.tl[sm.min-1]); render(); holdTick(holdMs());
 };
+
+/* ===== Feedback 5.11. abends ===== */
+(function(){
+  /* Torwart: kein Auswärtstrikot als Fehlgriff */
+  var _bb = buildBag;
+  buildBag = function(){ var b = _bb(); if (posOf(S.pos).gk) b = b.filter(function(x){ return x.id!=='jerseyW'; }); return b; };
+
+  /* Siegerkicken nur nach einem Sieg im Spiel davor, nicht nach Turnier oder zum Saisonstart */
+  var _fr = finishRun;
+  finishRun = function(){
+    var had = !!S.saved;
+    _fr();
+    if (!had && S.season && P.season && S.result && S.canPlay!==undefined) P.season.lastWin = (S.result.res==='win');
+  };
+  var _xe = xmEnd;
+  xmEnd = function(D){ if (P.season) P.season.lastWin = false; return _xe(D); };
+  var _to = trainOpts;
+  trainOpts = function(){ var s = P.season; if (s && s.round<=0) s.lastWin = false; return _to(); };
+  var _ns = A.nextseason;
+  A.nextseason = function(){
+    var s = P.season;
+    if (s){
+      s.lastWin = false;
+      var perm = []; for (var i=1;i<s.teams.length;i++) perm.push(i);
+      perm = shuffle(perm); var map = {0:0}; for (var j=0;j<perm.length;j++) map[j+1] = perm[j];
+      s.sched = s.sched.map(function(rd){ return rd.map(function(p){ return [map[p[0]], map[p[1]]]; }); });
+    }
+    return _ns.apply(this, arguments);
+  };
+
+  /* Erfolge: Schweizer Taschenmesser, Omeyer */
+  ACH.push({id:'taschenmesser', n:'Schweizer Taschenmesser', d:'Jede der sieben Positionen mindestens einmal gespielt.', hid:1});
+  ACH.push({id:'omeyer', n:'Thierry Omeyer, Niklas Landin ... und du!', d:'Als Torwart alle Crunch-Situationen inklusive 7m gehalten (mindestens 5).', hid:1});
+  var _fr2 = finishRun;
+  finishRun = function(){
+    var had = !!S.saved;
+    _fr2();
+    if (had || !S.result || !S.canPlay) return;
+    var R = S.result, c = P.career, n0 = (S.newAchExtra||[]).length;
+    if (R.min>0){
+      c.posSet = c.posSet || {}; c.posSet[S.pos] = 1;
+      if (['LA','KR','RA','RL','RM','RR','TW'].every(function(x){ return c.posSet[x]; })) grantAch('taschenmesser');
+    }
+    if (posOf(S.pos).gk){
+      var n = (R.crN||0)+(R.sevF||0), sv = (R.crG||0)+(R.sevS||0);
+      if (n>=5 && sv>=n) grantAch('omeyer');
+    }
+    var add = (S.newAchExtra||[]).slice(n0); if (add.length && S.saved){ S.saved.newAch = (S.saved.newAch||[]).concat(add); saveP(); }
+  };
+})();
 
 
 S = newRun();
