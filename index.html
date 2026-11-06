@@ -2078,7 +2078,7 @@ function sFinish(sm){
     if (R.pen>=3){ sm.out = true; R.red = true; sLog(sm,'Dritte Zeitstrafe: Rote Karte. Dein Spiel ist vorbei.'); }
     else sLog(sm, pick(PEN_TXT));
   }
-  if (playing && !sm.out && chance(F.injury/60*(sm.stam<30?1.6:1))){ sm.out = true; R.inj = true; sLog(sm,'Verletzung. Du humpelst vom Feld.'); }
+  if (playing && !sm.out && chance((S.noInj?0:F.injury)/60*(sm.stam<30?1.6:1))){ sm.out = true; R.inj = true; sLog(sm,'Verletzung. Du humpelst vom Feld.'); }
   if (playing){
     R.min++; sm.stam -= pos.drain*1.55*(1+F.drain);
     if (!sm.out && sm.stam<(gk?5:24)){ sm.onCourt = false; sLog(sm,'Auswechslung: Du brauchst eine Pause.','info'); }
@@ -3606,7 +3606,7 @@ function evGeld(){
 function buildEvents(){
   var s = P.season, q = [], f = S.fixture; if (!s || !f || S.coach) return q;
   var add = function(e){ if (e) q.push(e); };
-  if (!P.inj && chance(.05)) P.inj = {id:'cold', n:'Erkältung', left:ri(1,2)};
+  if (!P.inj && !S.noInj && chance(.05)) P.inj = {id:'cold', n:'Erkältung', left:(P.season && P.season.teams.length<10 ? 1 : ri(1,2))};
   if (P.inj && P.inj.left>0) add(evInjury());
   if (s.amtSeason!==s.num && (s.num>1 || s.round>=3)) add(evAmts());
   if (s.round===0 && s.posLocked && chance(.3)) add(evPosOffer());
@@ -4265,6 +4265,7 @@ var _ns10 = A.nextseason;
 A.nextseason = function(){ P.amtsPrev = pa().slice(); var r = _ns10.apply(this, arguments); if (P.season){ P.season.tripDone = false; P.season.tripTxt = ''; } return r; };
 
 /* ---------- Pausentexte ---------- */
+function smallLg(){ return !!(P.season && P.season.teams && P.season.teams.length<10); }
 function pk(){ return S.pauseKind || (P.inj && P.inj.id==='cold' ? 'cold' : 'inj'); }
 function spectTxt(){
   return S.homeSick ? 'Du liegst krank im Bett und verfolgst das Spiel nur über die WhatsApp-Gruppe.'
@@ -4300,7 +4301,7 @@ function evCold(I){
       S.trainStep = 2; S.trLog = (S.trLog||[]).concat(['Du brichst das Training nach kurzer Zeit ab.']);
       var tx = 'Du trainierst trotz Erkältung, brichst das Training aber nach kurzer Zeit ab. Energie und Fokus sinken.';
       if (chance(.5) && lv('kondi')>0 && !cantReduceKondi()){ P.skills.kondi = lv('kondi')-1; tx += ' Dein Körper streikt: Eine Stufe Kondition ist weg.'; }
-      P.inj.left = chance(.5) ? 2 : 1;
+      P.inj.left = smallLg() ? 1 : (chance(.5) ? 2 : 1);
       S.canPlay = false; S.injOut = true; S.homeSick = true; S.pauseKind = 'cold'; S.coachD -= .5; saveP();
       tx += ' Am Wochenende bleibst du krank zuhause und erfährst das Ergebnis nur aus der WhatsApp-Gruppe.';
       return {t:tx, c:chipsOf({energy:-12,focus:-10})};
@@ -4311,7 +4312,7 @@ function evColdGame(){
     opts:[evOpt('play','Trotzdem spielen','Du bleibst erkältet und verlierst Fokus.'),evOpt('pause','Pausieren','Dienstag bist du wieder fit. Du schaust mit Tee von der Tribüne zu.')],
     pick:function(id){
       if (id==='play'){
-        S.canPlay = true; S.injOut = false; S.painPlay = true; S.coachD -= 1; P.inj.left = 2; saveP();
+        S.canPlay = true; S.injOut = false; S.painPlay = true; S.coachD -= 1; P.inj.left = smallLg() ? 1 : 2; saveP();
         return {t:'Du spielst mit Erkältung. Der Trainer schaut skeptisch, und du bleibst weiter angeschlagen.', c:chipsOf({energy:-20,focus:-10})};
       }
       S.canPlay = false; S.injOut = true; S.pauseKind = 'cold'; P.inj.left = 1; S.coachD += .5; saveP();
@@ -4840,7 +4841,7 @@ eveOutcome = function(id){
 /* ---------- Harz-Konzept der Gegner ---------- */
 function parseTeamSpec(line){
   var m = String(line).split(/[|;]/), nm = m[0].trim().slice(0,24), spec = (m[1]||'').toLowerCase(), o = {n:nm};
-  if (/verbot/.test(spec)){ o.harz = true; o.resin = true; }
+  if (/verbot/.test(spec)){ o.harz = true; o.resin = false; }
   else if (/ohne/.test(spec)){ o.resin = false; o.harz = false; }
   else if (/mit|harz|backe/.test(spec)){ o.resin = true; o.harz = false; }
   return o;
@@ -5143,6 +5144,39 @@ A.sevwho = function(el){
       if (n>=5 && sv>=n) grantAch('omeyer');
     }
     var add = (S.newAchExtra||[]).slice(n0); if (add.length && S.saved){ S.saved.newAch = (S.saved.newAch||[]).concat(add); saveP(); }
+  };
+})();
+
+/* Harzverbot und Backe-Konzept schließen sich aus */
+(function(){
+  function fixHarz(){ if (P.season) P.season.teams.forEach(function(t){ if (t && !t.isMe && t.harz) t.resin = false; }); }
+  var _nr = newRun;
+  newRun = function(){ fixHarz(); return _nr.apply(this, arguments); };
+  var _ow = ownTeams;
+  ownTeams = function(){ var r = _ow.apply(this, arguments); r.teams.forEach(function(t){ if (!t.isMe && t.harz) t.resin = false; }); return r; };
+})();
+
+/* Kleine Ligen: kürzere Ausfälle. Vor dem Weihnachtsturnier keine neuen Krankheiten, Turnier immer fit */
+(function(){
+  function half(){ var s = P.season; return s ? Math.floor(s.sched.length/2) : -1; }
+  var _ni = newInjury;
+  newInjury = function(){
+    var I = _ni();
+    var s = P.season;
+    if (s && s.teams.length<10 && I.left>1) I.left = Math.max(1, Math.round(I.left*.5));
+    if (s && S.noInj) I.left = 1;
+    return I;
+  };
+  var _nr = newRun;
+  newRun = function(){
+    var s = P.season, T = half(), heal = false;
+    if (s && !s.done && s.round===T && P.inj){ P.inj = null; heal = true; saveP(); }
+    var r = _nr.apply(this, arguments);
+    if (s && !s.done){
+      r.noInj = (s.round>=T-3 && s.round<=T);
+      if (heal) r.healMsg = 'Die Weihnachtspause hat gutgetan: Du bist rechtzeitig zum Turnier wieder fit.';
+    }
+    return r;
   };
 })();
 
