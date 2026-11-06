@@ -243,9 +243,9 @@ var POS = [
   {id:'KR', name:'Kreisläufer', target:7, share:.13, drain:1.15, pen:.022, assist:.2, tip:'Braucht Kraft: ordentlich frühstücken (Portion 6 bis 8).'},
   {id:'LA', name:'Linksaußen', target:4, share:.11, drain:1.0, pen:.008, assist:.2, wing:1, tip:'Muss schnell sein: lieber leicht essen (Portion 3 bis 5).'},
   {id:'RA', name:'Rechtsaußen', target:4, share:.11, drain:1.0, pen:.008, assist:.2, wing:1, tip:'Muss schnell sein: lieber leicht essen (Portion 3 bis 5).'},
-  {id:'RL', name:'Rückraum links', target:5.5, share:.17, drain:1.1, pen:.014, assist:.45, tip:'Wurfkraft und Ausdauer: solide Portion (4,5 bis 6,5).'},
-  {id:'RM', name:'Rückraum Mitte', target:5.5, share:.15, drain:1.1, pen:.012, assist:.85, tip:'Spielmacher: Kopf frei, Magen ruhig (4,5 bis 6,5).'},
-  {id:'RR', name:'Rückraum rechts', target:5.5, share:.17, drain:1.1, pen:.014, assist:.45, tip:'Wurfkraft und Ausdauer: solide Portion (4,5 bis 6,5).'},
+  {id:'RL', name:'Rückraum links', target:5.5, share:.17, drain:1.1, pen:.014, assist:.45, tip:'Wurfkraft und Ausdauer: solide Portion (Portion 4,5 bis 6,5).'},
+  {id:'RM', name:'Rückraum Mitte', target:5.5, share:.15, drain:1.1, pen:.012, assist:.85, tip:'Spielmacher: Kopf frei, Magen ruhig (Portion 4,5 bis 6,5).'},
+  {id:'RR', name:'Rückraum rechts', target:5.5, share:.17, drain:1.1, pen:.014, assist:.45, tip:'Wurfkraft und Ausdauer: solide Portion (Portion 4,5 bis 6,5).'},
   {id:'TW', name:'Torhüter', target:5, share:0, drain:.6, pen:.002, gk:1, tip:'Reflexe zählen: Fokus ist alles (Portion 4 bis 6).'}
 ];
 function posOf(id){ for (var i=0;i<POS.length;i++) if (POS[i].id===id) return POS[i]; return POS[4]; }
@@ -1737,7 +1737,7 @@ function simStep(sm){
   }
   if (sm.canPlay && sm.onCourt && !sm.out && !sm.exited && !sm.reentered && min>=12){
     var poor = sm.gk ? (R.conc>=17+(min>=40?0:3) && R.saves<R.conc*.35) : (R.shots-R.goals>=7 && R.goals<R.shots*.4);
-    if ((sm.exitMin && min>=sm.exitMin) || (poor && min>=20 && chance(.12))){
+    if ((sm.exitMin && min>sm.exitMin) || (poor && min>=20 && chance(.12))){
       sm.exited = true; sm.onCourt = false; sm.benchT = 0;
       var back = min+ri(5,10), comeback = back<=56 && !sm.noBack && chance(poor ? .3 : .55);
       if (sm.split){ back = sm.retSplit-1; comeback = true; }
@@ -2078,7 +2078,7 @@ function sFinish(sm){
     if (R.pen>=3){ sm.out = true; R.red = true; sLog(sm,'Dritte Zeitstrafe: Rote Karte. Dein Spiel ist vorbei.'); }
     else sLog(sm, pick(PEN_TXT));
   }
-  if (playing && !sm.out && chance((S.noInj?0:F.injury)/60*(sm.stam<30?1.6:1))){ sm.out = true; R.inj = true; sLog(sm,'Verletzung. Du humpelst vom Feld.'); }
+  if (playing && !sm.out && chance((injWin()?0:F.injury)/60*(sm.stam<30?1.6:1))){ sm.out = true; R.inj = true; sLog(sm,'Verletzung. Du humpelst vom Feld.'); }
   if (playing){
     R.min++; sm.stam -= pos.drain*1.55*(1+F.drain);
     if (!sm.out && sm.stam<(gk?5:24)){ sm.onCourt = false; sLog(sm,'Auswechslung: Du brauchst eine Pause.','info'); }
@@ -3266,10 +3266,10 @@ function lgRead(){
 function vLeague(){
   var lg = S.lg || (S.lg = {step:'mode', pal:'bw', resin:true, n:12, name:'', namesTxt:''});
   if (lg.step==='mode'){
-    return '<section class="card"><h2>Karriere</h2><p class="lead">Spiel eine ganze Saison: mit Spielplan, Tabelle, Training und Auswärtsspielen. Dein Skill-Baum und deine Erfolge bleiben erhalten.</p><div class="opts">'
-      +'<button class="opt" data-a="lgmode" data-v="story"><b>Die 109er Story</b><span>HSG 24109 und elf feste Gegner aus der Region.</span></button>'
-      +'<button class="opt" data-a="lgmode" data-v="kreis"><b>Kreisoberliga Förde</b><span>Die feste Liga mit zwölf Mannschaften. Du wählst deinen Verein und kämpfst gegen alle anderen.</span></button>'
-      +'<button class="opt" data-a="lgmode" data-v="own"><b>Meine Liga</b><span>Eigener Verein, eigene Farben, 4 bis 24 Mannschaften.</span></button></div>'
+    return '<section class="card"><h2>Karriere</h2><p class="lead">Starte deine Karriere. Trainiere hart, erarbeite dir Skill-Punkte für mehr Wurfkraft, mehr Kondition oder auch für Special-Skills wie Dreher &amp; Heber.</p><p class="lead">Achja, fast vergessen: Deine Fans wollen deine Karriere natürlich hautnah miterleben. Am besten nimmst du sie mit auf deine Reise. Viel Spaß!</p><div class="opts">'
+      +'<button class="opt" data-a="lgmode" data-v="story"><b>Die 109er Story</b><span>Eine Liebe, ein Verein, lasst uns 109er sein: hier entlang für deine Karriere mit der HSG 24109.</span></button>'
+      +'<button class="opt" data-a="lgmode" data-v="kreis"><b>Kreisoberliga Förde</b><span>Kein 109er? Dann findest du hier vielleicht den passenden Verein.</span></button>'
+      +'<button class="opt" data-a="lgmode" data-v="own"><b>Meine Liga</b><span>Erstelle deinen eigenen Verein und deine eigene Liga. Völlige Freiheit mit 4 bis 24 Teams.</span></button></div>'
       +'<button class="btn ghost" data-a="lgback">Zurück</button></section>';
   }
   if (lg.step==='kreis'){
@@ -3606,7 +3606,7 @@ function evGeld(){
 function buildEvents(){
   var s = P.season, q = [], f = S.fixture; if (!s || !f || S.coach) return q;
   var add = function(e){ if (e) q.push(e); };
-  if (!P.inj && !S.noInj && chance(.05)) P.inj = {id:'cold', n:'Erkältung', left:(P.season && P.season.teams.length<10 ? 1 : ri(1,2))};
+  if (!P.inj && coldOk() && chance(.05)) P.inj = {id:'cold', n:'Erkältung', left:(P.season && P.season.teams.length<10 ? 1 : ri(1,2))};
   if (P.inj && P.inj.left>0) add(evInjury());
   if (s.amtSeason!==s.num && (s.num>1 || s.round>=3)) add(evAmts());
   if (s.round===0 && s.posLocked && chance(.3)) add(evPosOffer());
@@ -3863,7 +3863,7 @@ function diffPills(){
 }
 function diffTip(){
   return P.diff==='easy' ? 'Mit Hilfen: Portionsgrößen, Skill-Beschreibungen und Hinweise sind sichtbar. Skills kosten nur die Hälfte. Nach einer Saison steigst du automatisch auf Fortgeschritten um.'
-    : 'Ohne Hilfen: keine Portionsangaben, keine Erklärungen zu Skills und Lebensmitteln. Skills können einrosten, wenn du sie lange nicht brauchst.';
+    : 'Ohne Hilfen: keine Portionsangaben, keine Erklärungen zu Skills und Lebensmitteln.';
 }
 A.diff = function(el){ P.diff = el.dataset.v==='easy' ? 'easy' : 'mid'; saveP(); render(); };
 
@@ -4354,7 +4354,7 @@ mkSim = function(inter){
   if (sm.split){ sm.retSplit = chance(.5) ? 31 : ri(40,46); sm.exit2 = 999; }
   if (late || (!sm.split && chance(sm.gk ? .08 : (kk<=1 ? .12 : .06)) && !(P.postCold))){
     if (late || chance(.5)){
-      sm.onCourt = false; sm.exited = true; sm.retMin = 31; sm.exitMin = 0; sm.split = false; sm.halfOnly = 2;
+      sm.onCourt = false; sm.exited = true; sm.retMin = 30; sm.exitMin = 0; sm.split = false; sm.halfOnly = 2;
       if (!late) sm.pre[0] = {m:0,t:'Der Trainer setzt dich in der ersten Halbzeit auf die Bank. Nach der Pause bist du dran.',k:'info'};
     } else {
       sm.exitMin = 30; sm.noBack = true; sm.halfOnly = 1; sm.exited = false;
@@ -5164,7 +5164,7 @@ A.sevwho = function(el){
     var I = _ni();
     var s = P.season;
     if (s && s.teams.length<10 && I.left>1) I.left = Math.max(1, Math.round(I.left*.5));
-    if (s && S.noInj) I.left = 1;
+    if (injWin()) I.left = 1;
     return I;
   };
   var _nr = newRun;
@@ -5173,7 +5173,6 @@ A.sevwho = function(el){
     if (s && !s.done && s.round===T && P.inj){ P.inj = null; heal = true; saveP(); }
     var r = _nr.apply(this, arguments);
     if (s && !s.done){
-      r.noInj = (s.round>=T-3 && s.round<=T);
       if (heal) r.healMsg = 'Die Weihnachtspause hat gutgetan: Du bist rechtzeitig zum Turnier wieder fit.';
     }
     return r;
@@ -5207,6 +5206,56 @@ var _vt16 = V.table;
 V.table = function(){
   var h = _vt16();
   return P.season ? h.replace('<button class="btn" data-a="back">','<button class="btn ghost" data-a="rename">Vereinsnamen ändern</button><button class="btn" data-a="back">') : h;
+};
+
+function injWin(){ var s = P.season; if (!s || s.done) return false; var T = Math.floor(s.sched.length/2); return s.round>=T-3 && s.round<=T; }
+function coldOk(){ var s = P.season; return !injWin() && !(s && s.round<1); }
+
+/* Zurück-Button nach dem Umbenennen */
+A.rnback = function(){ go('table'); };
+var _vr17 = V.rename;
+V.rename = function(){ return _vr17().replace('data-a="table">Zurück zur Tabelle','data-a="rnback">Zurück zur Tabelle'); };
+
+/* Startbildschirm, Karriere-Reihenfolge, Spieler-Erstellung */
+var _dp17 = defaultP;
+defaultP = function(){ var d = _dp17(); d.welcomed = false; return d; };
+function vWelcome(){
+  return '<section class="card welcome"><h2>Herzlich Willkommen</h2>'
+    +'<p class="lead">Herzlich Willkommen zur Browser-Edition des 109er Spieltags-VLOGs, einem Text-Adventure rund um den Amateurhandball.</p>'
+    +'<p class="lead">Erstelle deinen eigenen Spieler, triff wegweisende Entscheidungen und wirf dein Team zur Meisterschaft! Oder halte hinten den Kasten sauber. Es ist deine Geschichte, schreibe sie!</p>'
+    +'<button class="btn" data-a="welcome">Starte jetzt deine Karriere</button>'
+    +'<p class="small"><i>Tipp: Dein Spielstand wird ausschließlich in deinem Browser gespeichert.</i></p></section>';
+}
+A.welcome = function(){ S.lg = null; go('league'); };
+var _vs17 = V.setup;
+V.setup = function(){ if (!P.season && !P.welcomed && !P.plset) return vWelcome(); return _vs17(); };
+var _lgs17 = A.lgstart;
+A.lgstart = function(el){ var had = !!P.season; _lgs17(el); if (P.season && !had){ P.welcomed = true; saveP(); } };
+A.lg = function(){ S.lg = null; S.stageBack = S.stage; go('league'); };
+playerForm = function(){
+  var p = posOf(S.pos);
+  return '<div class="setup">'+jersey()
+    +'<div class="fields"><div class="field"><label for="inName">Name auf dem Trikot (optional)</label><input id="inName" type="text" maxlength="12" value="'+esc(S.name)+'" autocomplete="off"></div>'
+    +'<div class="field"><label for="inNum">Trikotnummer</label><input id="inNum" type="number" min="1" max="99" inputmode="numeric" value="'+esc(S.num)+'"></div></div></div>'
+    +'<div class="field"><span class="lbl">Position <span class="small">(jede Position hat unterschiedliche Ansprüche)</span></span><div class="pills">'
+    + POS.map(function(q){ return '<button class="pill" data-a="pos" data-v="'+q.id+'" aria-pressed="'+(q.id===S.pos)+'">'+q.name+'</button>'; }).join('')
+    +'</div><p class="tip">'+tipOf(p)+'</p></div>'
+    +'<div class="field"><span class="lbl">Schwierigkeit</span><div class="pills">'+diffPills()+'<p class="tip">'+diffTip()+'</p></div>';
+};
+vPlayer = function(){
+  var first = !P.plset;
+  return '<section class="card"><h2>'+(first?'Dein Spieler':'Mein Spieler')+'</h2><p class="lead">'
+    +(first ? 'Der Trainer stellt dich zuerst dem Zeugwart vor. Du hast bei ihm früher die Zeitung ausgetragen. »Deine Wunschnummer ist bestimmt noch frei«, erklärt er dir mit einem Zwinkern.' : 'Name, Nummer, Position und Schwierigkeit.')+'</p>'
+    +playerForm()
+    +'<button class="btn" data-a="plok">'+(first?'Los geht\u2019s':'Fertig')+'</button></section>';
+};
+V.player = vPlayer;
+vNewCareer = function(){
+  return '<section class="card"><h2>Deine Karriere</h2><p class="lead">Starte eine neue Saison mit Spielplan, Tabelle, Training und Auswärtsspielen. Skills und Erfolge bleiben erhalten.</p>'
+    +'<button class="btn" data-a="lg">Neue Karriere starten</button>'
+    +'<div class="tiles"><button class="btn ghost" data-a="skills">Skill-Baum'+(P.sp?'<small>'+P.sp+' SP offen</small>':'')+'</button>'
+    +'<button class="btn ghost" data-a="ach">Erfolge<small>'+achN()+'/'+achTotal()+'</small></button>'
+    +'<button class="btn ghost" data-a="career">Karriere-Statistik</button><button class="btn ghost" data-a="menu">Menü</button></div></section>';
 };
 
 
