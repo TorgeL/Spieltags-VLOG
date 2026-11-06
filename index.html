@@ -2331,7 +2331,7 @@ function bagTick(){
   if (S.bagT<=0){ clearInterval(tick); S.bagOver = true; render(); }
 }
 function djRound(){
-  var g = shuffle(GENRES), good = g[0], hint = chance(.62) ? good : pick([g[1],g[2]]);
+  var g = shuffle(GENRES), good = g[0], hint = good;
   S.dj.cur = {pax:DJ_PAX[S.dj.round%3], good:good, neutral:g[1], bad:g[2], hint:hint};
 }
 function step(){
@@ -5179,6 +5179,35 @@ A.sevwho = function(el){
     return r;
   };
 })();
+
+/* Vereinsnamen der Liga nachträglich ändern */
+V.rename = function(){
+  var s = P.season; if (!s) return '<section class="card"><p>Keine Saison aktiv.</p><button class="btn" data-a="table">Zurück</button></section>';
+  var rows = s.teams.map(function(t,i){
+    if (t.n==='HSG 24109') return '';
+    return '<div class="field"><label for="tn'+i+'">'+(i===0?'Dein Verein':'Verein '+i)+'</label><input id="tn'+i+'" type="text" maxlength="24" value="'+esc(t.n)+'"></div>'+(i===0?'<div class="field"><label for="tnk">Kürzel (zum Beispiel für den Hashtag, etwa TSVS)</label><input id="tnk" type="text" maxlength="12" value="'+esc((s.club&&s.club.nick)||'')+'"></div>':'');
+  }).join('');
+  return '<section class="card"><h2>Vereinsnamen ändern</h2><p class="lead">Hier kannst du die Namen der Gegner anpassen, zum Beispiel aus „SG Suchsdorf“ ein „TSV Suchsdorf“ machen. Tabelle und Spielplan bleiben wie sie sind.</p>'+rows
+    +'<button class="btn" data-a="renamesave">Namen speichern</button><button class="btn ghost" data-a="table">Zurück zur Tabelle</button></section>';
+};
+V.rename = (function(f){ return function(){ return f(); }; })(V.rename);
+A.rename = function(){ go('rename'); };
+A.renamesave = function(){
+  var s = P.season; if (!s) return go('table');
+  s.teams.forEach(function(t,i){
+    if (t.n==='HSG 24109') return;
+    var e = document.getElementById('tn'+i), v = e ? String(e.value).replace(/[<>]/g,'').trim().slice(0,24) : '';
+    if (v){ t.n = v; if (i===0 && s.club) s.club.n = v; }
+  });
+  if (s.club && s.club.n!=='HSG 24109' && s.teams[0].n!=='HSG 24109'){ var ek = document.getElementById('tnk'), nk = ek ? String(ek.value).replace(/[<>#]/g,'').trim().slice(0,12) : ''; if (nk) s.club.nick = nk; }
+  if (S.fixture && S.oo && s.teams[S.fixture.opp]) S.oo.n = s.teams[S.fixture.opp].n;
+  saveP(); go('table');
+};
+var _vt16 = V.table;
+V.table = function(){
+  var h = _vt16();
+  return P.season ? h.replace('<button class="btn" data-a="back">','<button class="btn ghost" data-a="rename">Vereinsnamen ändern</button><button class="btn" data-a="back">') : h;
+};
 
 
 S = newRun();
