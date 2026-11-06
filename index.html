@@ -1904,7 +1904,7 @@ function sevSave(sm, c){
   else if (c.side===sSide){ pS = c.h===sH ? .70 : .30+.05*rf+(sH==='U'?.06*sg:0); }
   else pS = .04+.02*rf;
   pS = clamp(pS+(sm.form-60)/300+.02*ef('nerven')-(sm.oo.exp?.03:0),.02,.9);
-  if (chance(pS) || (style!=='heber' && c.side===sSide && c.h===sH)){ R.sevS++; R.saves++; R.lastKey = sm.min; sLog(sm,'7-Meter gehalten! Die Halle tobt.'); }
+  if (chance(pS) || (style==='heber' && c.side==='M') || (style!=='heber' && c.side===sSide && c.h===sH)){ R.sevS++; R.saves++; R.lastKey = sm.min; sLog(sm,'7-Meter gehalten! Die Halle tobt.'); }
   else { R.conc++; sm.as++; sLog(sm,'7-Meter drin ('+(sSide==='L'?'links':'rechts')+' '+(sH==='O'?'oben':'unten')+'). '+(c.side==='M' ? 'Du bleibst in der Mitte, der Ball geht in die Ecke.' : c.side===sSide ? (c.h===sH ? 'Richtige Ecke, aber der Wurf ist zu hart und zu genau. Da hilft auch dein Sprung nichts.' : 'Richtige Seite, aber der Ball geht '+(sH==='O'?'oben':'unten')+' vorbei.') : 'Du warst nicht in der Ecke.')); }
 }
 
