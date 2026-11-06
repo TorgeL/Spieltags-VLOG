@@ -1875,13 +1875,13 @@ function sevShoot(sm, c){
     R.sevSeq.push(false);
     if (c.style==='heber'){ sLog(sm,'Der Heber geht über das Tor. Der Trainer wechselt dich aus.','info'); bench(sm,5); }
     else if (c.style==='dreher'){ sLog(sm,'Zu wenig Backe, der Dreher geht vorbei!','info'); }
-    else sLog(sm,'7-Meter ans Aluminium. Das Tor bleibt zu.','info');
+    else sLog(sm, chance(.5) ? (c.side!==kSide && !stay ? 'Du schickst den Torwart in die falsche Ecke, aber der Ball geht nur an den Pfosten.' : '7-Meter ans Aluminium. Das Tor bleibt zu.') : 'Zu ungenau. Dein Wurf geht am Tor vorbei.','info');
   } else if (r<miss+pS){
     R.sevSeq.push(false);
     if (c.style==='heber'){ sLog(sm,'Peinlich! Der Torwart fängt den Heber ganz locker und lässt sich feiern. Der Trainer wechselt dich aus.','info'); bench(sm,5); }
     else if (c.style==='dreher') sLog(sm,'Zu verspielt, der Torwart kennt deine Tricks.','info');
     else if (lastTwo>=2) sLog(sm,'Der Torwart kennt inzwischen deine Lieblingsecke, Zeit umzudenken.','info');
-    else sLog(sm,'7-Meter gehalten. Der Torwart war in der Ecke ('+(kSide==='L'?'links':'rechts')+').','info');
+    else sLog(sm, (!stay && c.side===kSide && c.h===kH) ? '7-Meter gehalten. Der Torwart war in der Ecke.' : '7-Meter gehalten. Starker Reflex vom Torwart.','info');
   } else {
     R.sevSeq.push(true); R.sevG++; R.goals++; sm.hs++; R.lastKey = sm.min;
     if (c.style==='heber') R.hebG = (R.hebG||0)+1; if (c.style==='dreher') R.drG = (R.drG||0)+1;
